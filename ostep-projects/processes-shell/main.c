@@ -3,8 +3,65 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
+#include <stdbool.h>
 
-#define MAX_PATH_LEN 64
+typedef enum {
+    BUILT_IN_EXIT,
+    BUILT_IN_CD,
+    BUILT_IN_PATH,
+    UTIL,
+} Cmd;
+
+typedef struct Node {
+    char *data;
+    struct Node *next;
+} Node;
+
+Node *node_create(char *data)
+{
+    Node *new_node = malloc(sizeof(*new_node));
+    assert(new_node != NULL && "Buy more RAM");
+
+    new_node->data = strdup(data);
+    // Format the path
+    int data_len = strlen(new_node->data);
+    if (new_node->data[data_len-1] == '/') new_node->data[data_len-1] = '\0';
+
+    new_node->next = NULL;
+    return new_node;
+}
+
+void node_add_tail(Node **head, char *data)
+{
+    Node *new_node = node_create(data);
+    if (*head == NULL) {
+        *head = new_node;
+        return;
+    }
+
+    Node *temp = *head;
+    while (temp->next) temp = temp->next;
+    temp->next = new_node;
+}
+
+void node_dump(Node *head)
+{
+    while (head) {
+        printf("Node data: %s\n", head->data);
+        head = head->next;
+    }
+}
+
+void node_free(Node *head)
+{
+    Node *temp = NULL;
+    while (head) {
+        temp = head;
+        head = head->next;
+        free(temp->data);
+        free(temp);
+    }
+}
 
 void print_error()
 {
@@ -44,20 +101,48 @@ void token_arr_free(char **token_arr)
     free(token_arr);
 }
 
-char *get_exe_path(char **paths, char *exe_name)
+char *get_exe_path(Node *path, char *exe_name)
 {
     char *buf = NULL;
 
-    for (int i = 0; i < MAX_PATH_LEN && paths[i] != NULL; ++i) {
-        buf = malloc(sizeof(*buf) * strlen(paths[i]) * strlen(exe_name) + 2); // 2 for '/' and '\0'
-        strcat(buf, paths[i]);
+    while (path) {
+        buf = malloc(sizeof(*buf) * strlen(path->data) * strlen(exe_name) + 2); // 2 for '/' and '\0'
+        strcat(buf, path->data);
         strcat(buf, "/");
         strcat(buf, exe_name);
         if (access(buf, X_OK) == 0) return buf;
+        path = path->next;    
     }
 
     free(buf);
     return NULL;
+}
+
+Cmd get_cmd_type(char *token)
+{
+    if (strcmp(token, "exit") == 0) return BUILT_IN_EXIT;
+    if (strcmp(token, "cd") == 0) return BUILT_IN_CD;
+    if (strcmp(token, "path") == 0) return BUILT_IN_PATH;
+
+    return UTIL;
+}
+
+void exec_util_program(char **token_arr, Node *path)
+{
+    int child = fork();
+    assert(child != -1 && "fork fail");
+
+    if (child == 0) {
+        char *exe_path = get_exe_path(path, token_arr[0]); // Assume first token always be the exe_name
+        if (!exe_path) {
+            print_error();
+            exit(1);
+        }
+        execv(exe_path, token_arr);
+        perror("Execv fail");
+    } else {
+        waitpid(child, NULL, 0);
+    }
 }
 
 int main(int argc, char **argv)
@@ -76,35 +161,44 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    // NOTE: Could become a dynamic arr here, but for the sake of the simplicity just nah
-    char *paths[MAX_PATH_LEN] = {"/bin", "/usr/bin"};
+    bool running = true;
 
-    while(1) {
+    Node *path = NULL;
+    node_add_tail(&path, "/bin"); // Initial path
+
+    while(running) {
         printf("wish> ");
 
         int rcv_bytes = getline(&line, &line_size, stdin);
         if (rcv_bytes == EOF) break;
+
         char **token_arr = token_arr_init(line);
         if (token_arr[0] == NULL) {
             token_arr_free(token_arr);
             continue;
         }
 
-        int child = fork();
-        assert(child != -1 && "fork fail");
+        Cmd cmd = get_cmd_type(token_arr[0]);
 
-        if (child == 0) {
-            char *exe_path = get_exe_path(paths, token_arr[0]); // Assume first token always be the exe_name
-            if (!exe_path) {
-                print_error();
-                exit(1);
-            }
-            execv(exe_path, token_arr);
-            perror("Execv fail");
-        } else {
-            waitpid(child, NULL, 0);
-            token_arr_free(token_arr);
+        switch (cmd) {
+        case BUILT_IN_EXIT:
+            running = token_arr[1] != NULL; // if exit has other params, then fail to exit
+            if (running) print_error();
+            break;
+        case BUILT_IN_CD:
+            break;
+        case BUILT_IN_PATH:
+            node_free(path);
+            path = NULL;
+            if (token_arr[1] == NULL) break;
+            for (int i = 1; token_arr[i] != NULL; ++i) node_add_tail(&path, token_arr[i]);
+            break;
+        case UTIL:
+            exec_util_program(token_arr, path);
+            break;
         }
+
+        token_arr_free(token_arr);
     }
 
     free(line);
