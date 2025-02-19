@@ -179,13 +179,6 @@ int get_token_arr_len(char **arr)
     return sum;
 }
 
-void char_arr_dump(char **arr)
-{
-    for (int i = 0; arr[i] != NULL; ++i) {
-        printf("%d item: %s\n", i+1, arr[i]);
-    }
-}
-
 int get_ampersand_index_arr_len(int *arr)
 {
     int sum = 0;
