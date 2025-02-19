@@ -63,10 +63,11 @@ void print_error()
 }
 
 // Return a NULL termiated arr
+// NOTE: Kinda problematic, could have a better way to add new element in the token array, maybe use dynamic array here
 char **token_arr_init(char *line)
 {
     int arr_size = 0;
-    int arr_cap = 10;
+    int arr_cap = 128;
     char **arr = malloc(sizeof(*arr) * arr_cap);
     assert(arr != NULL && "Buy more RAM");
 
@@ -82,13 +83,34 @@ char **token_arr_init(char *line)
             arr = new_arr;
         }
 
-        // allow operator not separated by space like "ls -al >foo.txt"
-        if ((tok[0] == '>' || tok[0] == '&') && strlen(tok) > 1) {
-            arr[arr_size++] = strdup(tok[0] == '>' ? ">" : "&");
-            arr[arr_size++] = strdup(tok+1);
-        } else {
+        char *end = strpbrk(tok, ">&");
+        if (!end) {
             arr[arr_size++] = strdup(tok);
+            continue;
         }
+
+        char *begin = tok;
+
+        while (end) {
+            int tok_buf_len = end - begin;
+            if (tok_buf_len > 0) {
+                char *tok_buf = malloc(sizeof(*tok_buf) * (tok_buf_len+1));
+                memcpy(tok_buf, begin, tok_buf_len);
+                tok_buf[tok_buf_len] = '\0';
+                arr[arr_size++] = tok_buf;
+            }
+
+            char *operator_buf = malloc(sizeof(*operator_buf) * 2);
+
+            memcpy(operator_buf, end, 1);
+            operator_buf[1] = '\0';
+            arr[arr_size++] = operator_buf;
+
+            begin = end + 1;
+            end = strpbrk(begin, ">&");
+        }
+
+        if (begin[0] != '\0') arr[arr_size++] = strdup(begin);
     }
 
     arr[arr_size] = NULL;
@@ -157,20 +179,18 @@ int get_token_arr_len(char **arr)
     return sum;
 }
 
+void char_arr_dump(char **arr)
+{
+    for (int i = 0; arr[i] != NULL; ++i) {
+        printf("%d item: %s\n", i+1, arr[i]);
+    }
+}
+
 int get_ampersand_index_arr_len(int *arr)
 {
     int sum = 0;
     for (int i = 0; arr[i] != -1; ++i) sum++;
     return sum;
-}
-
-bool valid_redirection(char **token_arr, int redirection_sign_index)
-{
-    if (token_arr[redirection_sign_index+1][0] == '>') return false; // has multiple redirection sign
-    if (token_arr[redirection_sign_index+1] == NULL)   return false; // has no output file
-    if (token_arr[redirection_sign_index+2] != NULL)   return false; // has multiple output file
-
-    return true;
 }
 
 bool is_parallel_exec(char **token_arr)
@@ -182,14 +202,10 @@ bool is_parallel_exec(char **token_arr)
     return false;
 }
 
-bool valid_parallel_program(char **token_arr, int *ampersand_arr)
+bool valid_parallel_program(int *ampersand_arr)
 {
     int ampersand_arr_len = get_ampersand_index_arr_len(ampersand_arr);
-    int token_arr_len = get_token_arr_len(token_arr);
-    int last_ampersand_index = ampersand_arr[ampersand_arr_len-1];
     
-    if (last_ampersand_index == token_arr_len - 1) return false; // means that ampersand is the last element in token array
-
     int current_index = -1;
     int next_index = -1;
     for (int i = 0; i < ampersand_arr_len - 1; ++i) {
@@ -235,7 +251,12 @@ void program_runner(char **token_arr, Node *path)
     if (redirection_sign_index == -1) {
         execv(exe_path, token_arr);
     } else {
-        if (!valid_redirection(token_arr, redirection_sign_index)) {
+        bool not_valid =
+            token_arr[redirection_sign_index+1] == NULL ||    // has multiple redirection sign
+            token_arr[redirection_sign_index+1][0] == '>' ||  // has no output file
+            token_arr[redirection_sign_index+2] != NULL;      // has multiple output file
+
+        if (not_valid) {
             print_error();
             exit(1);
         }
@@ -274,6 +295,7 @@ void parallel_exec_util_program(char **token_arr, int *ampersand_arr, Node *path
                 program_index = ampersand_arr[i-1]+1;
                 argv_len = ampersand_arr[i] - ampersand_arr[i-1] - 1;
             }
+            if (argv_len == 0) exit(0);
             program_runner(token_arr_copy(token_arr, program_index, argv_len), path);
         }
         children[i] = child;
@@ -320,12 +342,14 @@ void exec_program(char **token_arr, Node **path, bool *running)
         for (int i = 1; token_arr[i] != NULL; ++i) node_add_tail(path, token_arr[i]);
         break;
     case UTIL:
+        if (*path == NULL) {
+            print_error();
+            break;
+        }
         if (is_parallel_exec(token_arr)) {
             ampersand_index_arr = get_ampersand_index_arr(token_arr);
-            if (!valid_parallel_program(token_arr, ampersand_index_arr)) {
-                print_error();
-                break;
-            }
+            if (!valid_parallel_program(ampersand_index_arr)) break;
+
             parallel_exec_util_program(token_arr, ampersand_index_arr, *path);
         } else {
             exec_util_program(token_arr, *path);
@@ -347,6 +371,7 @@ int main(int argc, char **argv)
     char *line = NULL;
     size_t line_size = 0;
 
+    bool running = true;
     Node *path = NULL;
     node_add_tail(&path, "/bin"); // Initial path
 
@@ -366,16 +391,16 @@ int main(int argc, char **argv)
                 continue;
             }
 
-            exec_program(token_arr, &path, NULL);
+            running = false;
+            exec_program(token_arr, &path, &running);
         }
 
         if (path) node_free(path);
         free(line);
         fclose(f);
+
         return 0;
     }
-
-    bool running = true;
 
     // interactive mode
     while (running) {
@@ -395,4 +420,6 @@ int main(int argc, char **argv)
 
     if (path) node_free(path);
     free(line);
+
+    return 0;
 }
