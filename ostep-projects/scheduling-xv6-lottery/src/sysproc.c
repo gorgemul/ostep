@@ -89,3 +89,23 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_settickets(void)
+{
+  int number;
+
+  if (argint(0, &number) < 0) return -1;
+
+  return settickets(number);
+}
+
+int
+sys_getpinfo(void)
+{
+  char *p;
+
+  if (argptr(0, &p, sizeof(char **) < -1)) return -1;
+
+  return getpinfo((struct pstat *)p);
+}

@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "pstat.h"
 
 struct {
   struct spinlock lock;
@@ -13,6 +14,7 @@ struct {
 } ptable;
 
 static struct proc *initproc;
+static struct pstat ps;
 
 int nextpid = 1;
 extern void forkret(void);
@@ -112,6 +114,16 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  for (int i = 0; i < NPROC; ++i) {
+    if (ps.inuse[i]) continue;
+    
+    ps.inuse[i] = 1;
+    ps.tickets[i] = 1;
+    ps.pid[i] = p->pid;
+    ps.ticks[i] = 0;
+    break;
+  }
+
   return p;
 }
 
@@ -181,6 +193,8 @@ int
 fork(void)
 {
   int i, pid;
+  int parent_tickets = 0;
+  int child_index = 0;
   struct proc *np;
   struct proc *curproc = myproc();
 
@@ -198,6 +212,16 @@ fork(void)
   }
   np->sz = curproc->sz;
   np->parent = curproc;
+
+  for (int i = 0; i < NPROC; ++i) {
+    if (ps.pid[i] == curproc->pid) parent_tickets = ps.tickets[i]; 
+    if (ps.pid[i] == np->pid) child_index = i;
+
+    if (child_index && parent_tickets) break;
+  }
+
+  ps.tickets[child_index] = parent_tickets; // Let child inherit parent's tickets
+
   *np->tf = *curproc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
@@ -249,6 +273,16 @@ exit(void)
 
   acquire(&ptable.lock);
 
+  for (int i = 0; i < NPROC; ++i) {
+    if (!ps.inuse[i] || ps.pid[i] != curproc->pid) continue;
+
+    ps.inuse[i] = 0;
+    ps.pid[i] = 0;
+    ps.tickets[i] = 0;
+    ps.ticks[i] = 0;
+    break;
+  }
+
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
 
@@ -256,8 +290,17 @@ exit(void)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->parent == curproc){
       p->parent = initproc;
-      if(p->state == ZOMBIE)
+      if(p->state == ZOMBIE) {
+        for (int i = 0; i < NPROC; ++i) {
+          if (!ps.inuse[i] || ps.pid[i] != p->pid) continue;
+          ps.inuse[i] = 0;
+          ps.pid[i] = 0;
+          ps.tickets[i] = 0;
+          ps.ticks[i] = 0;
+          break;
+        }
         wakeup1(initproc);
+      }
     }
   }
 
@@ -531,4 +574,41 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int
+settickets(int number)
+{
+  if (number <= 0) return -1;
+
+  int curproc_id = myproc()->pid;
+
+  for (int i = 0; i < NPROC; ++i) {
+    if (!ps.inuse[i] || ps.pid[i] != curproc_id) continue;
+
+    ps.tickets[i] = number;
+    return 0;
+  }
+
+  return -1;
+}
+
+int
+getpinfo(struct pstat *psp)
+{
+  if (psp == 0) return -1;
+
+  int i = 0;
+
+  for (int j = 0; j < NPROC; ++j) {
+    if (!ps.inuse[j]) continue;
+
+    psp->inuse[i] = 1;
+    psp->pid[i] = ps.pid[j];
+    psp->tickets[i] = ps.tickets[j];
+    psp->ticks[i] = ps.ticks[j];
+    ++i;
+  }
+
+  return 0;
 }
