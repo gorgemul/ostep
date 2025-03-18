@@ -22,6 +22,17 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+// Return 1 to max
+uint
+rand(int max)
+{
+  static uint next = 20;
+  if (max <= 1) return 1;
+
+  next = next * 1103515245 + 12345;
+  return (uint)((((next/65536) % 32768) % max) + 1);
+}
+
 void
 pinit(void)
 {
@@ -375,26 +386,59 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    struct proc *run_proc[NPROC];
+    int proc_tickets[NPROC];
+    int run_count = 0;
+    int total_tickets = 0;
+
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+      if(p->state != RUNNABLE) continue;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+      run_proc[run_count] = p;
 
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
+      for (int i = 0; i < NPROC; ++i) {
+        if (!ps.inuse[i] || ps.pid[i] != p->pid) continue;
+        
+        total_tickets += ps.tickets[i];
+        proc_tickets[run_count] = ps.tickets[i];
+        break;
+      }
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+      run_count++;
     }
-    release(&ptable.lock);
 
+    int winner = 0;
+    int jackpot = (int)rand(total_tickets);
+
+    for (; winner < run_count; ++winner) {
+      jackpot -= proc_tickets[winner];
+      if (jackpot <= 0) break;
+    }
+
+    p = run_proc[winner];
+
+    for (int i = 0; i < NPROC; ++i) {
+      if (!ps.inuse[i] || ps.pid[i] != p->pid) continue;
+      ps.ticks[i]++;
+      break;
+    }
+
+    // Switch to chosen process.  It is the process's job
+    // to release ptable.lock and then reacquire it
+    // before jumping back to us.
+    c->proc = p;
+    switchuvm(p);
+    p->state = RUNNING;
+
+    swtch(&(c->scheduler), p->context);
+    switchkvm();
+
+    // Process is done running for now.
+    // It should have changed its p->state before coming back.
+    c->proc = 0;
+
+    release(&ptable.lock);
   }
 }
 

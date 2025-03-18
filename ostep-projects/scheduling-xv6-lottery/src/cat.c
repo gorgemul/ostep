@@ -39,5 +39,5 @@ main(int argc, char *argv[])
     cat(fd);
     close(fd);
   }
-  exit();
+ exit();
 }
