@@ -1,0 +1,17 @@
+GOAL: Let multiple program to have different tickets, when scheduler decide who to run, draw a random number from all the tickets to pick the one to run, and fill the corresponding pstat's ticket
+1. Create pstat struct
+2. Create int settickets(int numbe) syscall
+3. Create getpinfo(struct pstat * ) syscall
+4. Modify the fork syscall, let the child to have the same tickets as the parent[DONE]
+5. Find all the runnable process, and push them into a run_arr, sum up all the tickets they have
+6. Use random generator to generate a number between 1 to total_tickets, and get the running ticket(run_ticket)
+	- loop through the run_arr, run_ticket -= current process's ticket, if <=0, break; else run index++
+7. Run the process, set the corresponding process's ticks++ in the pstat.
+8. Create a test script
+	- Test the whether the child can inherit parent's ticket
+	- Fork through all the children
+		- Print out how many tickets current children hold
+		- Assign some ticket to current children
+		- Run a decent amount of time
+		- Parent wait for all the child terminated.
+		- Use getpinfo syscall, to print out the running result
