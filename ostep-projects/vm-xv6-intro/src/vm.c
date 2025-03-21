@@ -385,6 +385,49 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
+// addr must be page aligned
+int
+mprotect(void *addr, int len)
+{
+  if (len <= 0 || (uint)addr % PGSIZE != 0) return -1;
+
+  pde_t *pgdir = myproc()->pgdir;
+  pte_t *pte;
+  uint pa, flags;
+
+  if (pgdir == 0) return -1;
+
+  if((pte = walkpgdir(pgdir, addr, 0)) == 0) return -1;
+
+  pa = PTE_ADDR(*pte);
+  flags = PTE_FLAGS(*pte) & (~PTE_W);
+  *pte = pa | flags;
+  lcr3(V2P(pgdir));
+
+  return 0;
+}
+
+int
+munprotect(void *addr, int len)
+{
+  if (len <= 0 || (uint)addr % PGSIZE != 0) return -1;
+
+  pde_t *pgdir = myproc()->pgdir;
+  pte_t *pte;
+  uint pa, flags;
+
+  if (pgdir == 0) return -1;
+
+  if ((pte = walkpgdir(pgdir, addr, 0)) == 0) return -1;
+  
+  pa = PTE_ADDR(*pte);
+  flags = PTE_FLAGS(*pte) | PTE_W;
+  *pte = pa | flags;
+  lcr3(V2P(pgdir));
+
+  return 0;
+}
+
 //PAGEBREAK!
 // Blank page.
 //PAGEBREAK!
