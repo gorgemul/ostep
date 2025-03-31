@@ -2,28 +2,43 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "common_threads.h"
+#include "semaphore.h"
 
 //
 // Your code goes in the structure and functions below
 //
 
 typedef struct __rwlock_t {
+    sem_t r_lock;
+    sem_t w_lock;
+    int reader;
 } rwlock_t;
 
 
 void rwlock_init(rwlock_t *rw) {
+    rw->reader = 0;
+    sem_init(&rw->r_lock, 1);
+    sem_init(&rw->w_lock, 1);
 }
 
 void rwlock_acquire_readlock(rwlock_t *rw) {
+    sem_wait(&rw->r_lock);
+    if (++rw->reader == 1) sem_wait(&rw->w_lock);
+    sem_post(&rw->r_lock);
 }
 
 void rwlock_release_readlock(rwlock_t *rw) {
+    sem_wait(&rw->r_lock);
+    if (--rw->reader == 0) sem_post(&rw->w_lock);
+    sem_post(&rw->r_lock);
 }
 
 void rwlock_acquire_writelock(rwlock_t *rw) {
+    sem_wait(&rw->w_lock);
 }
 
 void rwlock_release_writelock(rwlock_t *rw) {
+    sem_post(&rw->w_lock);
 }
 
 //
