@@ -224,6 +224,12 @@ fork(void)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
+//
+/* You also need to think about the semantics of a couple of existing system
+calls. For example, `int wait()` should wait for a child process that does not
+share the address space with this process. It should also free the address
+space if this is last reference to it. Also, `exit()` should work as before
+but for both processes and threads; little change is required here. */
 void
 exit(void)
 {
@@ -273,15 +279,16 @@ int
 wait(void)
 {
   struct proc *p;
-  int havekids, pid;
+  int havekids, pid, havethread;
   struct proc *curproc = myproc();
   
   acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children.
     havekids = 0;
+    havethread = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != curproc)
+      if(p->parent != curproc || p->pgdir == curproc->pgdir) // only wait for a child process that in different address space
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
@@ -289,7 +296,12 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+        for (struct proc *thread_p = ptable.proc; thread_p < &ptable.proc[NPROC]; thread_p++) {
+            if (thread_p->pid == pid || thread_p->pgdir != p->pgdir) continue;
+            havethread = 1;
+            break;
+        }
+        havethread ? p->pgdir = 0 : freevm(p->pgdir); // only free the address space when the last thread exit
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
@@ -531,4 +543,69 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int
+clone(void (*fcn)(void *, void *), void *arg1, void *arg2, void *stack)
+{
+    struct proc *np;
+    struct proc *curproc = myproc();
+    if ((np = allocproc()) == 0) return -1;
+    char *sp = (char*)stack + KSTACKSIZE;
+    sp -= 4;
+    *(uint*)sp = (uint)arg2;
+    sp -= 4;
+    *(uint*)sp = (uint)arg1;
+    sp -= 4;
+    *(uint*)sp = (uint)0xffffffff;
+    np->pgdir = curproc->pgdir;
+    np->sz = curproc->sz;
+    np->parent = curproc;
+    *np->tf = *curproc->tf;
+    np->tf->eax = 0;
+    np->tf->eip = (uint)fcn;
+    np->tf->esp = (uint)sp;
+    for (int i = 0; i < NOFILE; i++)
+        if (curproc->ofile[i]) np->ofile[i] = filedup(curproc->ofile[i]);
+    np->cwd = idup(curproc->cwd);
+    safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+    acquire(&ptable.lock);
+    np->state = RUNNABLE;
+    release(&ptable.lock);
+    return np->pid;
+}
+
+// TODO: stack should be passed out to be freed
+int
+join(void **stack)
+{
+    struct proc *p;
+    struct proc *curproc = myproc();
+    int havekids, pid;
+    acquire(&ptable.lock);
+    while (1) {
+        havekids = 0;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->parent != curproc || p->pgdir != curproc->pgdir) continue;
+            havekids = 1;
+            if (p->state == ZOMBIE) {
+                pid = p->pid;
+                kfree(p->kstack);
+                p->kstack = 0;
+                p->pgdir = 0; // not freevm here since the main thread and the child thread share the same address space, only set the ref to 0
+                p->pid = 0;
+                p->parent = 0;
+                p->name[0] = 0;
+                p->killed = 0;
+                p->state = UNUSED;
+                release(&ptable.lock);
+                return pid;
+            }
+        }
+        if (!havekids || curproc->killed) {
+            release(&ptable.lock);
+            return -1;
+        }
+        sleep(curproc, &ptable.lock);
+    }
 }
