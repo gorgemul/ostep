@@ -1,0 +1,1999 @@
+Function: int obstack_object_size (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the current size of the growing object, in bytes. Remember to call this function before finishing the object. After it is finished, obstack_object_size will return zero.
+
+If you have started growing an object and wish to cancel it, you should finish it and then free it, like this:
+
+obstack_free (obstack_ptr, obstack_finish (obstack_ptr));
+This has no effect if no object was growing.
+
+You can use obstack_blank with a negative size argument to make the current object smaller. Just don’t try to shrink it beyond zero length—there’s no telling what will happen if you do that.
+
+Next: Status of an Obstack, Previous: Growing Objects, Up: Obstacks   [Contents][Index]
+
+3.2.6.7 Extra Fast Growing Objects
+The usual functions for growing objects incur overhead for checking whether there is room for the new growth in the current chunk. If you are frequently constructing objects in small steps of growth, this overhead can be significant.
+
+You can reduce the overhead by using special “fast growth” functions that grow the object without checking. In order to have a robust program, you must do the checking yourself. If you do this checking in the simplest way each time you are about to add data to the object, you have not saved anything, because that is what the ordinary growth functions do. But if you can arrange to check less often, or check more efficiently, then you make the program faster.
+
+The function obstack_room returns the amount of room available in the current chunk. It is declared as follows:
+
+Function: int obstack_room (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This returns the number of bytes that can be added safely to the current growing object (or to an object about to be started) in obstack obstack-ptr using the fast growth functions.
+
+While you know there is room, you can use these fast growth functions for adding data to a growing object:
+
+Function: void obstack_1grow_fast (struct obstack *obstack-ptr, char c)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+The function obstack_1grow_fast adds one byte containing the character c to the growing object in obstack obstack-ptr.
+
+Function: void obstack_ptr_grow_fast (struct obstack *obstack-ptr, void *data)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The function obstack_ptr_grow_fast adds sizeof (void *) bytes containing the value of data to the growing object in obstack obstack-ptr.
+
+Function: void obstack_int_grow_fast (struct obstack *obstack-ptr, int data)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The function obstack_int_grow_fast adds sizeof (int) bytes containing the value of data to the growing object in obstack obstack-ptr.
+
+Function: void obstack_blank_fast (struct obstack *obstack-ptr, int size)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The function obstack_blank_fast adds size bytes to the growing object in obstack obstack-ptr without initializing them.
+
+When you check for space using obstack_room and there is not enough room for what you want to add, the fast growth functions are not safe. In this case, simply use the corresponding ordinary growth function instead. Very soon this will copy the object to a new chunk; then there will be lots of room available again.
+
+So, each time you use an ordinary growth function, check afterward for sufficient space using obstack_room. Once the object is copied to a new chunk, there will be plenty of space again, so the program will start using the fast growth functions again.
+
+Here is an example:
+
+void
+add_string (struct obstack *obstack, const char *ptr, int len)
+{
+  while (len > 0)
+    {
+      int room = obstack_room (obstack);
+      if (room == 0)
+        {
+          /* Not enough room.  Add one character slowly,
+             which may copy to a new chunk and make room.  */
+          obstack_1grow (obstack, *ptr++);
+          len--;
+        }
+      else
+        {
+          if (room > len)
+            room = len;
+          /* Add fast as much as we have room for. */
+          len -= room;
+          while (room-- > 0)
+            obstack_1grow_fast (obstack, *ptr++);
+        }
+    }
+}
+Next: Alignment of Data in Obstacks, Previous: Extra Fast Growing Objects, Up: Obstacks   [Contents][Index]
+
+3.2.6.8 Status of an Obstack
+Here are functions that provide information on the current status of allocation in an obstack. You can use them to learn about an object while still growing it.
+
+Function: void * obstack_base (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe | AS-Unsafe corrupt | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the tentative address of the beginning of the currently growing object in obstack-ptr. If you finish the object immediately, it will have that address. If you make it larger first, it may outgrow the current chunk—then its address will change!
+
+If no object is growing, this value says where the next object you allocate will start (once again assuming it fits in the current chunk).
+
+Function: void * obstack_next_free (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe | AS-Unsafe corrupt | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the address of the first free byte in the current chunk of obstack obstack-ptr. This is the end of the currently growing object. If no object is growing, obstack_next_free returns the same value as obstack_base.
+
+Function: int obstack_object_size (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the size in bytes of the currently growing object. This is equivalent to
+
+obstack_next_free (obstack-ptr) - obstack_base (obstack-ptr)
+Next: Obstack Chunks, Previous: Status of an Obstack, Up: Obstacks   [Contents][Index]
+
+3.2.6.9 Alignment of Data in Obstacks
+Each obstack has an alignment boundary; each object allocated in the obstack automatically starts on an address that is a multiple of the specified boundary. By default, this boundary is aligned so that the object can hold any type of data.
+
+To access an obstack’s alignment boundary, use the macro obstack_alignment_mask, whose function prototype looks like this:
+
+Macro: int obstack_alignment_mask (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The value is a bit mask; a bit that is 1 indicates that the corresponding bit in the address of an object should be 0. The mask value should be one less than a power of 2; the effect is that all object addresses are multiples of that power of 2. The default value of the mask is a value that allows aligned objects to hold any type of data: for example, if its value is 3, any type of data can be stored at locations whose addresses are multiples of 4. A mask value of 0 means an object can start on any multiple of 1 (that is, no alignment is required).
+
+The expansion of the macro obstack_alignment_mask is an lvalue, so you can alter the mask by assignment. For example, this statement:
+
+obstack_alignment_mask (obstack_ptr) = 0;
+has the effect of turning off alignment processing in the specified obstack.
+
+Note that a change in alignment mask does not take effect until after the next time an object is allocated or finished in the obstack. If you are not growing an object, you can make the new alignment mask take effect immediately by calling obstack_finish. This will finish a zero-length object and then do proper alignment for the next object.
+
+Next: Summary of Obstack Functions, Previous: Alignment of Data in Obstacks, Up: Obstacks   [Contents][Index]
+
+3.2.6.10 Obstack Chunks
+Obstacks work by allocating space for themselves in large chunks, and then parceling out space in the chunks to satisfy your requests. Chunks are normally 4096 bytes long unless you specify a different chunk size. The chunk size includes 8 bytes of overhead that are not actually used for storing objects. Regardless of the specified size, longer chunks will be allocated when necessary for long objects.
+
+The obstack library allocates chunks by calling the function obstack_chunk_alloc, which you must define. When a chunk is no longer needed because you have freed all the objects in it, the obstack library frees the chunk by calling obstack_chunk_free, which you must also define.
+
+These two must be defined (as macros) or declared (as functions) in each source file that uses obstack_init (see Creating Obstacks). Most often they are defined as macros like this:
+
+#define obstack_chunk_alloc malloc
+#define obstack_chunk_free free
+Note that these are simple macros (no arguments). Macro definitions with arguments will not work! It is necessary that obstack_chunk_alloc or obstack_chunk_free, alone, expand into a function name if it is not itself a function name.
+
+If you allocate chunks with malloc, the chunk size should be a power of 2. The default chunk size, 4096, was chosen because it is long enough to satisfy many typical requests on the obstack yet short enough not to waste too much memory in the portion of the last chunk not yet used.
+
+Macro: int obstack_chunk_size (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This returns the chunk size of the given obstack.
+
+Since this macro expands to an lvalue, you can specify a new chunk size by assigning it a new value. Doing so does not affect the chunks already allocated, but will change the size of chunks allocated for that particular obstack in the future. It is unlikely to be useful to make the chunk size smaller, but making it larger might improve efficiency if you are allocating many objects whose size is comparable to the chunk size. Here is how to do so cleanly:
+
+if (obstack_chunk_size (obstack_ptr) < new-chunk-size)
+  obstack_chunk_size (obstack_ptr) = new-chunk-size;
+Previous: Obstack Chunks, Up: Obstacks   [Contents][Index]
+
+3.2.6.11 Summary of Obstack Functions
+Here is a summary of all the functions associated with obstacks. Each takes the address of an obstack (struct obstack *) as its first argument.
+
+void obstack_init (struct obstack *obstack-ptr)
+Initialize use of an obstack. See Creating Obstacks.
+
+void *obstack_alloc (struct obstack *obstack-ptr, int size)
+Allocate an object of size uninitialized bytes. See Allocation in an Obstack.
+
+void *obstack_copy (struct obstack *obstack-ptr, void *address, int size)
+Allocate an object of size bytes, with contents copied from address. See Allocation in an Obstack.
+
+void *obstack_copy0 (struct obstack *obstack-ptr, void *address, int size)
+Allocate an object of size+1 bytes, with size of them copied from address, followed by a null character at the end. See Allocation in an Obstack.
+
+void obstack_free (struct obstack *obstack-ptr, void *object)
+Free object (and everything allocated in the specified obstack more recently than object). See Freeing Objects in an Obstack.
+
+void obstack_blank (struct obstack *obstack-ptr, int size)
+Add size uninitialized bytes to a growing object. See Growing Objects.
+
+void obstack_grow (struct obstack *obstack-ptr, void *address, int size)
+Add size bytes, copied from address, to a growing object. See Growing Objects.
+
+void obstack_grow0 (struct obstack *obstack-ptr, void *address, int size)
+Add size bytes, copied from address, to a growing object, and then add another byte containing a null character. See Growing Objects.
+
+void obstack_1grow (struct obstack *obstack-ptr, char data-char)
+Add one byte containing data-char to a growing object. See Growing Objects.
+
+void *obstack_finish (struct obstack *obstack-ptr)
+Finalize the object that is growing and return its permanent address. See Growing Objects.
+
+int obstack_object_size (struct obstack *obstack-ptr)
+Get the current size of the currently growing object. See Growing Objects.
+
+void obstack_blank_fast (struct obstack *obstack-ptr, int size)
+Add size uninitialized bytes to a growing object without checking that there is enough room. See Extra Fast Growing Objects.
+
+void obstack_1grow_fast (struct obstack *obstack-ptr, char data-char)
+Add one byte containing data-char to a growing object without checking that there is enough room. See Extra Fast Growing Objects.
+
+int obstack_room (struct obstack *obstack-ptr)
+Get the amount of room now available for growing the current object. See Extra Fast Growing Objects.
+
+int obstack_alignment_mask (struct obstack *obstack-ptr)
+The mask used for aligning the beginning of an object. This is an lvalue. See Alignment of Data in Obstacks.
+
+int obstack_chunk_size (struct obstack *obstack-ptr)
+The size for allocating chunks. This is an lvalue. See Obstack Chunks.
+
+void *obstack_base (struct obstack *obstack-ptr)
+Tentative starting address of the currently growing object. See Status of an Obstack.
+
+void *obstack_next_free (struct obstack *obstack-ptr)
+Address just after the end of the currently growing object. See Status of an Obstack.
+
+Previous: Obstacks, Up: Allocating Storage For Program Data   [Contents][Index]
+
+3.2.7 Automatic Storage with Variable Size
+The function alloca supports a kind of half-dynamic allocation in which blocks are allocated dynamically but freed automatically.
+
+Allocating a block with alloca is an explicit action; you can allocate as many blocks as you wish, and compute the size at run time. But all the blocks are freed when you exit the function that alloca was called from, just as if they were automatic variables declared in that function. There is no way to free the space explicitly.
+
+The prototype for alloca is in stdlib.h. This function is a BSD extension.
+
+Function: void * alloca (size_t size)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The return value of alloca is the address of a block of size bytes of memory, allocated in the stack frame of the calling function.
+
+Do not use alloca inside the arguments of a function call—you will get unpredictable results, because the stack space for the alloca would appear on the stack in the middle of the space for the function arguments. An example of what to avoid is foo (x, alloca (4), y).
+
+alloca Example
+Advantages of alloca
+Disadvantages of alloca
+GNU C Variable-Size Arrays
+Next: Advantages of alloca, Up: Automatic Storage with Variable Size   [Contents][Index]
+
+3.2.7.1 alloca Example
+As an example of the use of alloca, here is a function that opens a file name made from concatenating two argument strings, and returns a file descriptor or minus one signifying failure:
+
+int
+open2 (char *str1, char *str2, int flags, int mode)
+{
+  char *name = (char *) alloca (strlen (str1) + strlen (str2) + 1);
+  stpcpy (stpcpy (name, str1), str2);
+  return open (name, flags, mode);
+}
+Here is how you would get the same results with malloc and free:
+
+int
+open2 (char *str1, char *str2, int flags, int mode)
+{
+  char *name = malloc (strlen (str1) + strlen (str2) + 1);
+  int desc;
+  if (name == 0)
+    fatal ("virtual memory exceeded");
+  stpcpy (stpcpy (name, str1), str2);
+  desc = open (name, flags, mode);
+  free (name);
+  return desc;
+}
+As you can see, it is simpler with alloca. But alloca has other, more important advantages, and some disadvantages.
+
+Next: Disadvantages of alloca, Previous: alloca Example, Up: Automatic Storage with Variable Size   [Contents][Index]
+
+3.2.7.2 Advantages of alloca
+Here are the reasons why alloca may be preferable to malloc:
+
+Using alloca wastes very little space and is very fast. (It is open-coded by the GNU C compiler.)
+Since alloca does not have separate pools for different sizes of blocks, space used for any size block can be reused for any other size. alloca does not cause memory fragmentation.
+Nonlocal exits done with longjmp (see Non-Local Exits) automatically free the space allocated with alloca when they exit through the function that called alloca. This is the most important reason to use alloca.
+To illustrate this, suppose you have a function open_or_report_error which returns a descriptor, like open, if it succeeds, but does not return to its caller if it fails. If the file cannot be opened, it prints an error message and jumps out to the command level of your program using longjmp. Let’s change open2 (see alloca Example) to use this subroutine:
+
+int
+open2 (char *str1, char *str2, int flags, int mode)
+{
+  char *name = (char *) alloca (strlen (str1) + strlen (str2) + 1);
+  stpcpy (stpcpy (name, str1), str2);
+  return open_or_report_error (name, flags, mode);
+}
+Because of the way alloca works, the memory it allocates is freed even when an error occurs, with no special effort required.
+
+By contrast, the previous definition of open2 (which uses malloc and free) would develop a memory leak if it were changed in this way. Even if you are willing to make more changes to fix it, there is no easy way to do so.
+
+Next: GNU C Variable-Size Arrays, Previous: Advantages of alloca, Up: Automatic Storage with Variable Size   [Contents][Index]
+
+3.2.7.3 Disadvantages of alloca
+These are the disadvantages of alloca in comparison with malloc:
+
+If you try to allocate more memory than the machine can provide, you don’t get a clean error message. Instead you get a fatal signal like the one you would get from an infinite recursion; probably a segmentation violation (see Program Error Signals).
+Some non-GNU systems fail to support alloca, so it is less portable. However, a slower emulation of alloca written in C is available for use on systems with this deficiency.
+Previous: Disadvantages of alloca, Up: Automatic Storage with Variable Size   [Contents][Index]
+
+3.2.7.4 GNU C Variable-Size Arrays
+In GNU C, you can replace most uses of alloca with an array of variable size. Here is how open2 would look then:
+
+int open2 (char *str1, char *str2, int flags, int mode)
+{
+  char name[strlen (str1) + strlen (str2) + 1];
+  stpcpy (stpcpy (name, str1), str2);
+  return open (name, flags, mode);
+}
+But alloca is not always equivalent to a variable-sized array, for several reasons:
+
+A variable size array’s space is freed at the end of the scope of the name of the array. The space allocated with alloca remains until the end of the function.
+It is possible to use alloca within a loop, allocating an additional block on each iteration. This is impossible with variable-sized arrays.
+NB: If you mix use of alloca and variable-sized arrays within one function, exiting a scope in which a variable-sized array was declared frees all blocks allocated with alloca during the execution of that scope.
+
+Next: Memory Protection, Previous: Allocating Storage For Program Data, Up: Virtual Memory Allocation And Paging   [Contents][Index]
+
+3.3 Resizing the Data Segment
+The symbols in this section are declared in unistd.h.
+
+You will not normally use the functions in this section, because the functions described in Allocating Storage For Program Data are easier to use. Those are interfaces to a GNU C Library memory allocator that uses the functions below itself. The functions below are simple interfaces to system calls.
+
+Function: int brk (void *addr)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+brk sets the high end of the calling process’ data segment to addr.
+
+The address of the end of a segment is defined to be the address of the last byte in the segment plus 1.
+
+The function has no effect if addr is lower than the low end of the data segment. (This is considered success, by the way.)
+
+The function fails if it would cause the data segment to overlap another segment or exceed the process’ data storage limit (see Limiting Resource Usage).
+
+The function is named for a common historical case where data storage and the stack are in the same segment. Data storage allocation grows upward from the bottom of the segment while the stack grows downward toward it from the top of the segment and the curtain between them is called the break.
+
+The return value is zero on success. On failure, the return value is -1 and errno is set accordingly. The following errno values are specific to this function:
+
+ENOMEM
+The request would cause the data segment to overlap another segment or exceed the process’ data storage limit.
+
+Function: void *sbrk (ptrdiff_t delta)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is the same as brk except that you specify the new end of the data segment as an offset delta from the current end and on success the return value is the address of the resulting end of the data segment instead of zero.
+
+This means you can use ‘sbrk(0)’ to find out what the current end of the data segment is.
+
+Next: Locking Pages, Previous: Resizing the Data Segment, Up: Virtual Memory Allocation And Paging   [Contents][Index]
+
+3.4 Memory Protection
+When a page is mapped using mmap, page protection flags can be specified using the protection flags argument. See Memory-mapped I/O.
+
+The following flags are available:
+
+PROT_WRITE
+The memory can be written to.
+
+PROT_READ
+The memory can be read. On some architectures, this flag implies that the memory can be executed as well (as if PROT_EXEC had been specified at the same time).
+
+PROT_EXEC
+The memory can be used to store instructions which can then be executed. On most architectures, this flag implies that the memory can be read (as if PROT_READ had been specified).
+
+PROT_NONE
+This flag must be specified on its own.
+
+The memory is reserved, but cannot be read, written, or executed. If this flag is specified in a call to mmap, a virtual memory area will be set aside for future use in the process, and mmap calls without the MAP_FIXED flag will not use it for subsequent allocations. For anonymous mappings, the kernel will not reserve any physical memory for the allocation at the time the mapping is created.
+
+The operating system may keep track of these flags separately even if the underlying hardware treats them the same for the purposes of access checking (as happens with PROT_READ and PROT_EXEC on some platforms). On GNU systems, PROT_EXEC always implies PROT_READ, so that users can view the machine code which is executing on their system.
+
+Inappropriate access will cause a segfault (see Program Error Signals).
+
+After allocation, protection flags can be changed using the mprotect function.
+
+Function: int mprotect (void *address, size_t length, int protection)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+A successful call to the mprotect function changes the protection flags of at least length bytes of memory, starting at address.
+
+address must be aligned to the page size for the mapping. The system page size can be obtained by calling sysconf with the _SC_PAGESIZE parameter (see Definition of sysconf). The system page size is the granularity in which the page protection of anonymous memory mappings and most file mappings can be changed. Memory which is mapped from special files or devices may have larger page granularity than the system page size and may require larger alignment.
+
+length is the number of bytes whose protection flags must be changed. It is automatically rounded up to the next multiple of the system page size.
+
+protection is a combination of the PROT_* flags described above.
+
+The mprotect function returns 0 on success and -1 on failure.
+
+The following errno error conditions are defined for this function:
+
+ENOMEM
+The system was not able to allocate resources to fulfill the request. This can happen if there is not enough physical memory in the system for the allocation of backing storage. The error can also occur if the new protection flags would cause the memory region to be split from its neighbors, and the process limit for the number of such distinct memory regions would be exceeded.
+
+EINVAL
+address is not properly aligned to a page boundary for the mapping, or length (after rounding up to the system page size) is not a multiple of the applicable page size for the mapping, or the combination of flags in protection is not valid.
+
+EACCES
+The file for a file-based mapping was not opened with open flags which are compatible with protection.
+
+EPERM
+The system security policy does not allow a mapping with the specified flags. For example, mappings which are both PROT_EXEC and PROT_WRITE at the same time might not be allowed.
+
+If the mprotect function is used to make a region of memory inaccessible by specifying the PROT_NONE protection flag and access is later restored, the memory retains its previous contents.
+
+On some systems, it may not be possible to specify additional flags which were not present when the mapping was first created. For example, an attempt to make a region of memory executable could fail if the initial protection flags were ‘PROT_READ | PROT_WRITE’.
+
+In general, the mprotect function can be used to change any process memory, no matter how it was allocated. However, portable use of the function requires that it is only used with memory regions returned by mmap or mmap64.
+
+Memory Protection Keys
+3.4.1 Memory Protection Keys
+On some systems, further restrictions can be added to specific pages using memory protection keys. These restrictions work as follows:
+
+All memory pages are associated with a protection key. The default protection key does not cause any additional protections to be applied during memory accesses. New keys can be allocated with the pkey_alloc function, and applied to pages using pkey_mprotect.
+Each thread has a set of separate access right restriction for each protection key. These access rights can be manipulated using the pkey_set and pkey_get functions.
+During a memory access, the system obtains the protection key for the accessed page and uses that to determine the applicable access rights, as configured for the current thread. If the access is restricted, a segmentation fault is the result ((see Program Error Signals). These checks happen in addition to the PROT_* protection flags set by mprotect or pkey_mprotect.
+New threads and subprocesses inherit the access rights of the current thread. If a protection key is allocated subsequently, existing threads (except the current) will use an unspecified system default for the access rights associated with newly allocated keys.
+
+Upon entering a signal handler, the system resets the access rights of the current thread so that pages with the default key can be accessed, but the access rights for other protection keys are unspecified.
+
+Applications are expected to allocate a key once using pkey_alloc, and apply the key to memory regions which need special protection with pkey_mprotect:
+
+  int key = pkey_alloc (0, PKEY_DISABLE_ACCESS);
+  if (key < 0)
+    /* Perform error checking, including fallback for lack of support.  */
+    ...;
+
+  /* Apply the key to a special memory region used to store critical
+     data.  */
+  if (pkey_mprotect (region, region_length,
+                     PROT_READ | PROT_WRITE, key) < 0)
+    ...; /* Perform error checking (generally fatal).  */
+If the key allocation fails due to lack of support for memory protection keys, the pkey_mprotect call can usually be skipped. In this case, the region will not be protected by default. It is also possible to call pkey_mprotect with a key value of -1, in which case it will behave in the same way as mprotect.
+
+After key allocation assignment to memory pages, pkey_set can be used to temporarily acquire access to the memory region and relinquish it again:
+
+  if (key >= 0 && pkey_set (key, 0) < 0)
+    ...; /* Perform error checking (generally fatal).  */
+  /* At this point, the current thread has read-write access to the
+     memory region.  */
+  ...
+  /* Revoke access again.  */
+  if (key >= 0 && pkey_set (key, PKEY_DISABLE_ACCESS) < 0)
+    ...; /* Perform error checking (generally fatal).  */
+In this example, a negative key value indicates that no key had been allocated, which means that the system lacks support for memory protection keys and it is not necessary to change the the access rights of the current thread (because it always has access).
+
+Compared to using mprotect to change the page protection flags, this approach has two advantages: It is thread-safe in the sense that the access rights are only changed for the current thread, so another thread which changes its own access rights concurrently to gain access to the mapping will not suddenly see its access rights revoked. And pkey_set typically does not involve a call into the kernel and a context switch, so it is more efficient.
+
+Function: int pkey_alloc (unsigned int flags, unsigned int restrictions)
+Preliminary: | MT-Safe | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+Allocate a new protection key. The flags argument is reserved and must be zero. The restrictions argument specifies access rights which are applied to the current thread (as if with pkey_set below). Access rights of other threads are not changed.
+
+The function returns the new protection key, a non-negative number, or -1 on error.
+
+The following errno error conditions are defined for this function:
+
+ENOSYS
+The system does not implement memory protection keys.
+
+EINVAL
+The flags argument is not zero.
+
+The restrictions argument is invalid.
+
+The system does not implement memory protection keys or runs in a mode in which memory protection keys are disabled.
+
+ENOSPC
+All available protection keys already have been allocated.
+
+The system does not implement memory protection keys or runs in a mode in which memory protection keys are disabled.
+
+Function: int pkey_free (int key)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Deallocate the protection key, so that it can be reused by pkey_alloc.
+
+Calling this function does not change the access rights of the freed protection key. The calling thread and other threads may retain access to it, even if it is subsequently allocated again. For this reason, it is not recommended to call the pkey_free function.
+
+ENOSYS
+The system does not implement memory protection keys.
+
+EINVAL
+The key argument is not a valid protection key.
+
+Function: int pkey_mprotect (void *address, size_t length, int protection, int key)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Similar to mprotect, but also set the memory protection key for the memory region to key.
+
+Some systems use memory protection keys to emulate certain combinations of protection flags. Under such circumstances, specifying an explicit protection key may behave as if additional flags have been specified in protection, even though this does not happen with the default protection key. For example, some systems can support PROT_EXEC-only mappings only with a default protection key, and memory with a key which was allocated using pkey_alloc will still be readable if PROT_EXEC is specified without PROT_READ.
+
+If key is -1, the default protection key is applied to the mapping, just as if mprotect had been called.
+
+The pkey_mprotect function returns 0 on success and -1 on failure. The same errno error conditions as for mprotect are defined for this function, with the following addition:
+
+EINVAL
+The key argument is not -1 or a valid memory protection key allocated using pkey_alloc.
+
+ENOSYS
+The system does not implement memory protection keys, and key is not -1.
+
+Function: int pkey_set (int key, unsigned int rights)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Change the access rights of the current thread for memory pages with the protection key key to rights. If rights is zero, no additional access restrictions on top of the page protection flags are applied. Otherwise, rights is a combination of the following flags:
+
+PKEY_DISABLE_WRITE
+Subsequent attempts to write to memory with the specified protection key will fault.
+
+PKEY_DISABLE_ACCESS
+Subsequent attempts to write to or read from memory with the specified protection key will fault.
+
+Operations not specified as flags are not restricted. In particular, this means that the memory region will remain executable if it was mapped with the PROT_EXEC protection flag and PKEY_DISABLE_ACCESS has been specified.
+
+Calling the pkey_set function with a protection key which was not allocated by pkey_alloc results in undefined behavior. This means that calling this function on systems which do not support memory protection keys is undefined.
+
+The pkey_set function returns 0 on success and -1 on failure.
+
+The following errno error conditions are defined for this function:
+
+EINVAL
+The system does not support the access rights restrictions expressed in the rights argument.
+
+Function: int pkey_get (int key)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Return the access rights of the current thread for memory pages with protection key key. The return value is zero or a combination of the PKEY_DISABLE_* flags; see the pkey_set function.
+
+Calling the pkey_get function with a protection key which was not allocated by pkey_alloc results in undefined behavior. This means that calling this function on systems which do not support memory protection keys is undefined.
+
+Previous: Memory Protection, Up: Virtual Memory Allocation And Paging   [Contents][Index]
+
+3.5 Locking Pages
+You can tell the system to associate a particular virtual memory page with a real page frame and keep it that way — i.e., cause the page to be paged in if it isn’t already and mark it so it will never be paged out and consequently will never cause a page fault. This is called locking a page.
+
+The functions in this chapter lock and unlock the calling process’ pages.
+
+Why Lock Pages
+Locked Memory Details
+Functions To Lock And Unlock Pages
+Next: Locked Memory Details, Up: Locking Pages   [Contents][Index]
+
+3.5.1 Why Lock Pages
+Because page faults cause paged out pages to be paged in transparently, a process rarely needs to be concerned about locking pages. However, there are two reasons people sometimes are:
+
+Speed. A page fault is transparent only insofar as the process is not sensitive to how long it takes to do a simple memory access. Time-critical processes, especially realtime processes, may not be able to wait or may not be able to tolerate variance in execution speed.
+A process that needs to lock pages for this reason probably also needs priority among other processes for use of the CPU. See Process CPU Priority And Scheduling.
+
+In some cases, the programmer knows better than the system’s demand paging allocator which pages should remain in real memory to optimize system performance. In this case, locking pages can help.
+
+Privacy. If you keep secrets in virtual memory and that virtual memory gets paged out, that increases the chance that the secrets will get out. If a passphrase gets written out to disk swap space, for example, it might still be there long after virtual and real memory have been wiped clean.
+Be aware that when you lock a page, that’s one fewer page frame that can be used to back other virtual memory (by the same or other processes), which can mean more page faults, which means the system runs more slowly. In fact, if you lock enough memory, some programs may not be able to run at all for lack of real memory.
+
+Next: Functions To Lock And Unlock Pages, Previous: Why Lock Pages, Up: Locking Pages   [Contents][Index]
+
+3.5.2 Locked Memory Details
+A memory lock is associated with a virtual page, not a real frame. The paging rule is: If a frame backs at least one locked page, don’t page it out.
+
+Memory locks do not stack. I.e., you can’t lock a particular page twice so that it has to be unlocked twice before it is truly unlocked. It is either locked or it isn’t.
+
+A memory lock persists until the process that owns the memory explicitly unlocks it. (But process termination and exec cause the virtual memory to cease to exist, which you might say means it isn’t locked any more).
+
+Memory locks are not inherited by child processes. (But note that on a modern Unix system, immediately after a fork, the parent’s and the child’s virtual address space are backed by the same real page frames, so the child enjoys the parent’s locks). See Creating a Process.
+
+Because of its ability to impact other processes, only the superuser can lock a page. Any process can unlock its own page.
+
+The system sets limits on the amount of memory a process can have locked and the amount of real memory it can have dedicated to it. See Limiting Resource Usage.
+
+In Linux, locked pages aren’t as locked as you might think. Two virtual pages that are not shared memory can nonetheless be backed by the same real frame. The kernel does this in the name of efficiency when it knows both virtual pages contain identical data, and does it even if one or both of the virtual pages are locked.
+
+But when a process modifies one of those pages, the kernel must get it a separate frame and fill it with the page’s data. This is known as a copy-on-write page fault. It takes a small amount of time and in a pathological case, getting that frame may require I/O.
+
+To make sure this doesn’t happen to your program, don’t just lock the pages. Write to them as well, unless you know you won’t write to them ever. And to make sure you have pre-allocated frames for your stack, enter a scope that declares a C automatic variable larger than the maximum stack size you will need, set it to something, then return from its scope.
+
+Previous: Locked Memory Details, Up: Locking Pages   [Contents][Index]
+
+3.5.3 Functions To Lock And Unlock Pages
+The symbols in this section are declared in sys/mman.h. These functions are defined by POSIX.1b, but their availability depends on your kernel. If your kernel doesn’t allow these functions, they exist but always fail. They are available with a Linux kernel.
+
+Portability Note: POSIX.1b requires that when the mlock and munlock functions are available, the file unistd.h define the macro _POSIX_MEMLOCK_RANGE and the file limits.h define the macro PAGESIZE to be the size of a memory page in bytes. It requires that when the mlockall and munlockall functions are available, the unistd.h file define the macro _POSIX_MEMLOCK. The GNU C Library conforms to this requirement.
+
+Function: int mlock (const void *addr, size_t len)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+mlock locks a range of the calling process’ virtual pages.
+
+The range of memory starts at address addr and is len bytes long. Actually, since you must lock whole pages, it is the range of pages that include any part of the specified range.
+
+When the function returns successfully, each of those pages is backed by (connected to) a real frame (is resident) and is marked to stay that way. This means the function may cause page-ins and have to wait for them.
+
+When the function fails, it does not affect the lock status of any pages.
+
+The return value is zero if the function succeeds. Otherwise, it is -1 and errno is set accordingly. errno values specific to this function are:
+
+ENOMEM
+At least some of the specified address range does not exist in the calling process’ virtual address space.
+The locking would cause the process to exceed its locked page limit.
+EPERM
+The calling process is not superuser.
+
+EINVAL
+len is not positive.
+
+ENOSYS
+The kernel does not provide mlock capability.
+
+Function: int mlock2 (const void *addr, size_t len, unsigned int flags)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is similar to mlock. If flags is zero, a call to mlock2 behaves exactly as the equivalent call to mlock.
+
+The flags argument must be a combination of zero or more of the following flags:
+
+MLOCK_ONFAULT
+Only those pages in the specified address range which are already in memory are locked immediately. Additional pages in the range are automatically locked in case of a page fault and allocation of memory.
+
+Like mlock, mlock2 returns zero on success and -1 on failure, setting errno accordingly. Additional errno values defined for mlock2 are:
+
+EINVAL
+The specified (non-zero) flags argument is not supported by this system.
+
+You can lock all a process’ memory with mlockall. You unlock memory with munlock or munlockall.
+
+To avoid all page faults in a C program, you have to use mlockall, because some of the memory a program uses is hidden from the C code, e.g. the stack and automatic variables, and you wouldn’t know what address to tell mlock.
+
+Function: int munlock (const void *addr, size_t len)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+munlock unlocks a range of the calling process’ virtual pages.
+
+munlock is the inverse of mlock and functions completely analogously to mlock, except that there is no EPERM failure.
+
+Function: int mlockall (int flags)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+mlockall locks all the pages in a process’ virtual memory address space, and/or any that are added to it in the future. This includes the pages of the code, data and stack segment, as well as shared libraries, user space kernel data, shared memory, and memory mapped files.
+
+flags is a string of single bit flags represented by the following macros. They tell mlockall which of its functions you want. All other bits must be zero.
+
+MCL_CURRENT
+Lock all pages which currently exist in the calling process’ virtual address space.
+
+MCL_FUTURE
+Set a mode such that any pages added to the process’ virtual address space in the future will be locked from birth. This mode does not affect future address spaces owned by the same process so exec, which replaces a process’ address space, wipes out MCL_FUTURE. See Executing a File.
+
+When the function returns successfully, and you specified MCL_CURRENT, all of the process’ pages are backed by (connected to) real frames (they are resident) and are marked to stay that way. This means the function may cause page-ins and have to wait for them.
+
+When the process is in MCL_FUTURE mode because it successfully executed this function and specified MCL_CURRENT, any system call by the process that requires space be added to its virtual address space fails with errno = ENOMEM if locking the additional space would cause the process to exceed its locked page limit. In the case that the address space addition that can’t be accommodated is stack expansion, the stack expansion fails and the kernel sends a SIGSEGV signal to the process.
+
+When the function fails, it does not affect the lock status of any pages or the future locking mode.
+
+The return value is zero if the function succeeds. Otherwise, it is -1 and errno is set accordingly. errno values specific to this function are:
+
+ENOMEM
+At least some of the specified address range does not exist in the calling process’ virtual address space.
+The locking would cause the process to exceed its locked page limit.
+EPERM
+The calling process is not superuser.
+
+EINVAL
+Undefined bits in flags are not zero.
+
+ENOSYS
+The kernel does not provide mlockall capability.
+
+You can lock just specific pages with mlock. You unlock pages with munlockall and munlock.
+
+Function: int munlockall (void)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+munlockall unlocks every page in the calling process’ virtual address space and turns off MCL_FUTURE future locking mode.
+
+The return value is zero if the function succeeds. Otherwise, it is -1 and errno is set accordingly. The only way this function can fail is for generic reasons that all functions and system calls can fail, so there are no specific errno values.
+
+Next: String and Array Utilities, Previous: Virtual Memory Allocation And Paging, Up: Main Menu   [Contents][Index]
+
+4 Character Handling
+Programs that work with characters and strings often need to classify a character—is it alphabetic, is it a digit, is it whitespace, and so on—and perform case conversion operations on characters. The functions in the header file ctype.h are provided for this purpose.
+
+Since the choice of locale and character set can alter the classifications of particular character codes, all of these functions are affected by the current locale. (More precisely, they are affected by the locale currently selected for character classification—the LC_CTYPE category; see Locale Categories.)
+
+The ISO C standard specifies two different sets of functions. The one set works on char type characters, the other one on wchar_t wide characters (see Introduction to Extended Characters).
+
+Classification of Characters
+Case Conversion
+Character class determination for wide characters
+Notes on using the wide character classes
+Mapping of wide characters.
+Next: Case Conversion, Up: Character Handling   [Contents][Index]
+
+4.1 Classification of Characters
+This section explains the library functions for classifying characters. For example, isalpha is the function to test for an alphabetic character. It takes one argument, the character to test as an unsigned char value, and returns a nonzero integer if the character is alphabetic, and zero otherwise. You would use it like this:
+
+if (isalpha ((unsigned char) c))
+  printf ("The character `%c' is alphabetic.\n", c);
+Each of the functions in this section tests for membership in a particular class of characters; each has a name starting with ‘is’. Each of them takes one argument, which is a character to test. The character argument must be in the value range of unsigned char (0 to 255 for the GNU C Library). On a machine where the char type is signed, it may be necessary to cast the argument to unsigned char, or mask it with ‘& 0xff’. (On unsigned char machines, this step is harmless, so portable code should always perform it.) The ‘is’ functions return an int which is treated as a boolean value.
+
+All ‘is’ functions accept the special value EOF and return zero. (Note that EOF must not be cast to unsigned char for this to work.)
+
+As an extension, the GNU C Library accepts signed char values as ‘is’ functions arguments in the range -128 to -2, and returns the result for the corresponding unsigned character. However, as there might be an actual character corresponding to the EOF integer constant, doing so may introduce bugs, and it is recommended to apply the conversion to the unsigned character range as appropriate.
+
+The attributes of any given character can vary between locales. See Locales and Internationalization, for more information on locales.
+
+These functions are declared in the header file ctype.h.
+
+Function: int islower (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a lower-case letter. The letter need not be from the Latin alphabet, any alphabet representable is valid.
+
+Function: int isupper (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is an upper-case letter. The letter need not be from the Latin alphabet, any alphabet representable is valid.
+
+Function: int isalpha (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is an alphabetic character (a letter). If islower or isupper is true of a character, then isalpha is also true.
+
+In some locales, there may be additional characters for which isalpha is true—letters which are neither upper case nor lower case. But in the standard "C" locale, there are no such additional characters.
+
+Function: int isdigit (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a decimal digit (‘0’ through ‘9’).
+
+Function: int isalnum (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is an alphanumeric character (a letter or number); in other words, if either isalpha or isdigit is true of a character, then isalnum is also true.
+
+Function: int isxdigit (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a hexadecimal digit. Hexadecimal digits include the normal decimal digits ‘0’ through ‘9’ and the letters ‘A’ through ‘F’ and ‘a’ through ‘f’.
+
+Function: int ispunct (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a punctuation character. This means any printing character that is not alphanumeric or a space character.
+
+Function: int isspace (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a whitespace character. In the standard "C" locale, isspace returns true for only the standard whitespace characters:
+
+' '
+space
+
+'\f'
+formfeed
+
+'\n'
+newline
+
+'\r'
+carriage return
+
+'\t'
+horizontal tab
+
+'\v'
+vertical tab
+
+Function: int isblank (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a blank character; that is, a space or a tab. This function was originally a GNU extension, but was added in ISO C99.
+
+Function: int isgraph (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a graphic character; that is, a character that has a glyph associated with it. The whitespace characters are not considered graphic.
+
+Function: int isprint (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a printing character. Printing characters include all the graphic characters, plus the space (‘ ’) character.
+
+Function: int iscntrl (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a control character (that is, a character that is not a printing character).
+
+Function: int isascii (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if c is a 7-bit unsigned char value that fits into the US/UK ASCII character set. This function is a BSD extension and is also an SVID extension.
+
+Next: Character class determination for wide characters, Previous: Classification of Characters, Up: Character Handling   [Contents][Index]
+
+4.2 Case Conversion
+This section explains the library functions for performing conversions such as case mappings on characters. For example, toupper converts any character to upper case if possible. If the character can’t be converted, toupper returns it unchanged.
+
+These functions take one argument of type int, which is the character to convert, and return the converted character as an int. If the conversion is not applicable to the argument given, the argument is returned unchanged.
+
+Compatibility Note: In pre-ISO C dialects, instead of returning the argument unchanged, these functions may fail when the argument is not suitable for the conversion. Thus for portability, you may need to write islower(c) ? toupper(c) : c rather than just toupper(c).
+
+These functions are declared in the header file ctype.h.
+
+Function: int tolower (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+If c is an upper-case letter, tolower returns the corresponding lower-case letter. If c is not an upper-case letter, c is returned unchanged.
+
+Function: int toupper (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+If c is a lower-case letter, toupper returns the corresponding upper-case letter. Otherwise c is returned unchanged.
+
+Function: int toascii (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function converts c to a 7-bit unsigned char value that fits into the US/UK ASCII character set, by clearing the high-order bits. This function is a BSD extension and is also an SVID extension.
+
+Function: int _tolower (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This is identical to tolower, and is provided for compatibility with the SVID. See SVID (The System V Interface Description).
+
+Function: int _toupper (int c)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This is identical to toupper, and is provided for compatibility with the SVID.
+
+Next: Notes on using the wide character classes, Previous: Case Conversion, Up: Character Handling   [Contents][Index]
+
+4.3 Character class determination for wide characters
+Amendment 1 to ISO C90 defines functions to classify wide characters. Although the original ISO C90 standard already defined the type wchar_t, no functions operating on them were defined.
+
+The general design of the classification functions for wide characters is more general. It allows extensions to the set of available classifications, beyond those which are always available. The POSIX standard specifies how extensions can be made, and this is already implemented in the GNU C Library implementation of the localedef program.
+
+The character class functions are normally implemented with bitsets, with a bitset per character. For a given character, the appropriate bitset is read from a table and a test is performed as to whether a certain bit is set. Which bit is tested for is determined by the class.
+
+For the wide character classification functions this is made visible. There is a type classification type defined, a function to retrieve this value for a given class, and a function to test whether a given character is in this class, using the classification value. On top of this the normal character classification functions as used for char objects can be defined.
+
+Data type: wctype_t
+The wctype_t can hold a value which represents a character class. The only defined way to generate such a value is by using the wctype function.
+
+This type is defined in wctype.h.
+
+Function: wctype_t wctype (const char *property)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+wctype returns a value representing a class of wide characters which is identified by the string property. Besides some standard properties each locale can define its own ones. In case no property with the given name is known for the current locale selected for the LC_CTYPE category, the function returns zero.
+
+The properties known in every locale are:
+
+"alnum"	"alpha"	"cntrl"	"digit"
+"graph"	"lower"	"print"	"punct"
+"space"	"upper"	"xdigit"
+This function is declared in wctype.h.
+
+To test the membership of a character to one of the non-standard classes the ISO C standard defines a completely new function.
+
+Function: int iswctype (wint_t wc, wctype_t desc)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns a nonzero value if wc is in the character class specified by desc. desc must previously be returned by a successful call to wctype.
+
+This function is declared in wctype.h.
+
+To make it easier to use the commonly-used classification functions, they are defined in the C library. There is no need to use wctype if the property string is one of the known character classes. In some situations it is desirable to construct the property strings, and then it is important that wctype can also handle the standard classes.
+
+Function: int iswalnum (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns a nonzero value if wc is an alphanumeric character (a letter or number); in other words, if either iswalpha or iswdigit is true of a character, then iswalnum is also true.
+
+This function can be implemented using
+
+iswctype (wc, wctype ("alnum"))
+It is declared in wctype.h.
+
+Function: int iswalpha (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is an alphabetic character (a letter). If iswlower or iswupper is true of a character, then iswalpha is also true.
+
+In some locales, there may be additional characters for which iswalpha is true—letters which are neither upper case nor lower case. But in the standard "C" locale, there are no such additional characters.
+
+This function can be implemented using
+
+iswctype (wc, wctype ("alpha"))
+It is declared in wctype.h.
+
+Function: int iswcntrl (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a control character (that is, a character that is not a printing character).
+
+This function can be implemented using
+
+iswctype (wc, wctype ("cntrl"))
+It is declared in wctype.h.
+
+Function: int iswdigit (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a digit (e.g., ‘0’ through ‘9’). Please note that this function does not only return a nonzero value for decimal digits, but for all kinds of digits. A consequence is that code like the following will not work unconditionally for wide characters:
+
+n = 0;
+while (iswdigit (*wc))
+  {
+    n *= 10;
+    n += *wc++ - L'0';
+  }
+This function can be implemented using
+
+iswctype (wc, wctype ("digit"))
+It is declared in wctype.h.
+
+Function: int iswgraph (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a graphic character; that is, a character that has a glyph associated with it. The whitespace characters are not considered graphic.
+
+This function can be implemented using
+
+iswctype (wc, wctype ("graph"))
+It is declared in wctype.h.
+
+Function: int iswlower (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a lower-case letter. The letter need not be from the Latin alphabet, any alphabet representable is valid.
+
+This function can be implemented using
+
+iswctype (wc, wctype ("lower"))
+It is declared in wctype.h.
+
+Function: int iswprint (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a printing character. Printing characters include all the graphic characters, plus the space (‘ ’) character.
+
+This function can be implemented using
+
+iswctype (wc, wctype ("print"))
+It is declared in wctype.h.
+
+Function: int iswpunct (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a punctuation character. This means any printing character that is not alphanumeric or a space character.
+
+This function can be implemented using
+
+iswctype (wc, wctype ("punct"))
+It is declared in wctype.h.
+
+Function: int iswspace (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a whitespace character. In the standard "C" locale, iswspace returns true for only the standard whitespace characters:
+
+L' '
+space
+
+L'\f'
+formfeed
+
+L'\n'
+newline
+
+L'\r'
+carriage return
+
+L'\t'
+horizontal tab
+
+L'\v'
+vertical tab
+
+This function can be implemented using
+
+iswctype (wc, wctype ("space"))
+It is declared in wctype.h.
+
+Function: int iswupper (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is an upper-case letter. The letter need not be from the Latin alphabet, any alphabet representable is valid.
+
+This function can be implemented using
+
+iswctype (wc, wctype ("upper"))
+It is declared in wctype.h.
+
+Function: int iswxdigit (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a hexadecimal digit. Hexadecimal digits include the normal decimal digits ‘0’ through ‘9’ and the letters ‘A’ through ‘F’ and ‘a’ through ‘f’.
+
+This function can be implemented using
+
+iswctype (wc, wctype ("xdigit"))
+It is declared in wctype.h.
+
+The GNU C Library also provides a function which is not defined in the ISO C standard but which is available as a version for single byte characters as well.
+
+Function: int iswblank (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns true if wc is a blank character; that is, a space or a tab. This function was originally a GNU extension, but was added in ISO C99. It is declared in wchar.h.
+
+Next: Mapping of wide characters., Previous: Character class determination for wide characters, Up: Character Handling   [Contents][Index]
+
+4.4 Notes on using the wide character classes
+The first note is probably not astonishing but still occasionally a cause of problems. The iswXXX functions can be implemented using macros and in fact, the GNU C Library does this. They are still available as real functions but when the wctype.h header is included the macros will be used. This is the same as the char type versions of these functions.
+
+The second note covers something new. It can be best illustrated by a (real-world) example. The first piece of code is an excerpt from the original code. It is truncated a bit but the intention should be clear.
+
+int
+is_in_class (int c, const char *class)
+{
+  if (strcmp (class, "alnum") == 0)
+    return isalnum (c);
+  if (strcmp (class, "alpha") == 0)
+    return isalpha (c);
+  if (strcmp (class, "cntrl") == 0)
+    return iscntrl (c);
+  …
+  return 0;
+}
+Now, with the wctype and iswctype you can avoid the if cascades, but rewriting the code as follows is wrong:
+
+int
+is_in_class (int c, const char *class)
+{
+  wctype_t desc = wctype (class);
+  return desc ? iswctype ((wint_t) c, desc) : 0;
+}
+The problem is that it is not guaranteed that the wide character representation of a single-byte character can be found using casting. In fact, usually this fails miserably. The correct solution to this problem is to write the code as follows:
+
+int
+is_in_class (int c, const char *class)
+{
+  wctype_t desc = wctype (class);
+  return desc ? iswctype (btowc (c), desc) : 0;
+}
+See Converting Single Characters, for more information on btowc. Note that this change probably does not improve the performance of the program a lot since the wctype function still has to make the string comparisons. It gets really interesting if the is_in_class function is called more than once for the same class name. In this case the variable desc could be computed once and reused for all the calls. Therefore the above form of the function is probably not the final one.
+
+Previous: Notes on using the wide character classes, Up: Character Handling   [Contents][Index]
+
+4.5 Mapping of wide characters.
+The classification functions are also generalized by the ISO C standard. Instead of just allowing the two standard mappings, a locale can contain others. Again, the localedef program already supports generating such locale data files.
+
+Data Type: wctrans_t
+This data type is defined as a scalar type which can hold a value representing the locale-dependent character mapping. There is no way to construct such a value apart from using the return value of the wctrans function.
+
+This type is defined in wctype.h.
+
+Function: wctrans_t wctrans (const char *property)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The wctrans function has to be used to find out whether a named mapping is defined in the current locale selected for the LC_CTYPE category. If the returned value is non-zero, you can use it afterwards in calls to towctrans. If the return value is zero no such mapping is known in the current locale.
+
+Beside locale-specific mappings there are two mappings which are guaranteed to be available in every locale:
+
+"tolower"	"toupper"
+These functions are declared in wctype.h.
+
+Function: wint_t towctrans (wint_t wc, wctrans_t desc)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+towctrans maps the input character wc according to the rules of the mapping for which desc is a descriptor, and returns the value it finds. desc must be obtained by a successful call to wctrans.
+
+This function is declared in wctype.h.
+
+For the generally available mappings, the ISO C standard defines convenient shortcuts so that it is not necessary to call wctrans for them.
+
+Function: wint_t towlower (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+If wc is an upper-case letter, towlower returns the corresponding lower-case letter. If wc is not an upper-case letter, wc is returned unchanged.
+
+towlower can be implemented using
+
+towctrans (wc, wctrans ("tolower"))
+This function is declared in wctype.h.
+
+Function: wint_t towupper (wint_t wc)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+If wc is a lower-case letter, towupper returns the corresponding upper-case letter. Otherwise wc is returned unchanged.
+
+towupper can be implemented using
+
+towctrans (wc, wctrans ("toupper"))
+This function is declared in wctype.h.
+
+The same warnings given in the last section for the use of the wide character classification functions apply here. It is not possible to simply cast a char type value to a wint_t and use it as an argument to towctrans calls.
+
+Next: Character Set Handling, Previous: Character Handling, Up: Main Menu   [Contents][Index]
+
+5 String and Array Utilities
+Operations on strings (null-terminated byte sequences) are an important part of many programs. The GNU C Library provides an extensive set of string utility functions, including functions for copying, concatenating, comparing, and searching strings. Many of these functions can also operate on arbitrary regions of storage; for example, the memcpy function can be used to copy the contents of any kind of array.
+
+It’s fairly common for beginning C programmers to “reinvent the wheel” by duplicating this functionality in their own code, but it pays to become familiar with the library functions and to make use of them, since this offers benefits in maintenance, efficiency, and portability.
+
+For instance, you could easily compare one string to another in two lines of C code, but if you use the built-in strcmp function, you’re less likely to make a mistake. And, since these library functions are typically highly optimized, your program may run faster too.
+
+Representation of Strings
+String and Array Conventions
+String Length
+Copying Strings and Arrays
+Concatenating Strings
+Truncating Strings while Copying
+String/Array Comparison
+Collation Functions
+Search Functions
+Finding Tokens in a String
+Erasing Sensitive Data
+Shuffling Bytes
+Obfuscating Data
+Encode Binary Data
+Argz and Envz Vectors
+Next: String and Array Conventions, Up: String and Array Utilities   [Contents][Index]
+
+5.1 Representation of Strings
+This section is a quick summary of string concepts for beginning C programmers. It describes how strings are represented in C and some common pitfalls. If you are already familiar with this material, you can skip this section.
+
+A string is a null-terminated array of bytes of type char, including the terminating null byte. String-valued variables are usually declared to be pointers of type char *. Such variables do not include space for the contents of a string; that has to be stored somewhere else—in an array variable, a string constant, or dynamically allocated memory (see Allocating Storage For Program Data). It’s up to you to store the address of the chosen memory space into the pointer variable. Alternatively you can store a null pointer in the pointer variable. The null pointer does not point anywhere, so attempting to reference the string it points to gets an error.
+
+A multibyte character is a sequence of one or more bytes that represents a single character using the locale’s encoding scheme; a null byte always represents the null character. A multibyte string is a string that consists entirely of multibyte characters. In contrast, a wide string is a null-terminated sequence of wchar_t objects. A wide-string variable is usually declared to be a pointer of type wchar_t *, by analogy with string variables and char *. See Introduction to Extended Characters.
+
+By convention, the null byte, '\0', marks the end of a string and the null wide character, L'\0', marks the end of a wide string. For example, in testing to see whether the char * variable p points to a null byte marking the end of a string, you can write !*p or *p == '\0'.
+
+A null byte is quite different conceptually from a null pointer, although both are represented by the integer constant 0.
+
+A string literal appears in C program source as a multibyte string between double-quote characters (‘"’). If the initial double-quote character is immediately preceded by a capital ‘L’ (ell) character (as in L"foo"), it is a wide string literal. String literals can also contribute to string concatenation: "a" "b" is the same as "ab". For wide strings one can use either L"a" L"b" or L"a" "b". Modification of string literals is not allowed by the GNU C compiler, because literals are placed in read-only storage.
+
+Arrays that are declared const cannot be modified either. It’s generally good style to declare non-modifiable string pointers to be of type const char *, since this often allows the C compiler to detect accidental modifications as well as providing some amount of documentation about what your program intends to do with the string.
+
+The amount of memory allocated for a byte array may extend past the null byte that marks the end of the string that the array contains. In this document, the term allocated size is always used to refer to the total amount of memory allocated for an array, while the term length refers to the number of bytes up to (but not including) the terminating null byte. Wide strings are similar, except their sizes and lengths count wide characters, not bytes.
+
+A notorious source of program bugs is trying to put more bytes into a string than fit in its allocated size. When writing code that extends strings or moves bytes into a pre-allocated array, you should be very careful to keep track of the length of the string and make explicit checks for overflowing the array. Many of the library functions do not do this for you! Remember also that you need to allocate an extra byte to hold the null byte that marks the end of the string.
+
+Originally strings were sequences of bytes where each byte represented a single character. This is still true today if the strings are encoded using a single-byte character encoding. Things are different if the strings are encoded using a multibyte encoding (for more information on encodings see Introduction to Extended Characters). There is no difference in the programming interface for these two kind of strings; the programmer has to be aware of this and interpret the byte sequences accordingly.
+
+But since there is no separate interface taking care of these differences the byte-based string functions are sometimes hard to use. Since the count parameters of these functions specify bytes a call to memcpy could cut a multibyte character in the middle and put an incomplete (and therefore unusable) byte sequence in the target buffer.
+
+To avoid these problems later versions of the ISO C standard introduce a second set of functions which are operating on wide characters (see Introduction to Extended Characters). These functions don’t have the problems the single-byte versions have since every wide character is a legal, interpretable value. This does not mean that cutting wide strings at arbitrary points is without problems. It normally is for alphabet-based languages (except for non-normalized text) but languages based on syllables still have the problem that more than one wide character is necessary to complete a logical unit. This is a higher level problem which the C library functions are not designed to solve. But it is at least good that no invalid byte sequences can be created. Also, the higher level functions can also much more easily operate on wide characters than on multibyte characters so that a common strategy is to use wide characters internally whenever text is more than simply copied.
+
+The remaining of this chapter will discuss the functions for handling wide strings in parallel with the discussion of strings since there is almost always an exact equivalent available.
+
+Next: String Length, Previous: Representation of Strings, Up: String and Array Utilities   [Contents][Index]
+
+5.2 String and Array Conventions
+This chapter describes both functions that work on arbitrary arrays or blocks of memory, and functions that are specific to strings and wide strings.
+
+Functions that operate on arbitrary blocks of memory have names beginning with ‘mem’ and ‘wmem’ (such as memcpy and wmemcpy) and invariably take an argument which specifies the size (in bytes and wide characters respectively) of the block of memory to operate on. The array arguments and return values for these functions have type void * or wchar_t. As a matter of style, the elements of the arrays used with the ‘mem’ functions are referred to as “bytes”. You can pass any kind of pointer to these functions, and the sizeof operator is useful in computing the value for the size argument. Parameters to the ‘wmem’ functions must be of type wchar_t *. These functions are not really usable with anything but arrays of this type.
+
+In contrast, functions that operate specifically on strings and wide strings have names beginning with ‘str’ and ‘wcs’ respectively (such as strcpy and wcscpy) and look for a terminating null byte or null wide character instead of requiring an explicit size argument to be passed. (Some of these functions accept a specified maximum length, but they also check for premature termination.) The array arguments and return values for these functions have type char * and wchar_t * respectively, and the array elements are referred to as “bytes” and “wide characters”.
+
+In many cases, there are both ‘mem’ and ‘str’/‘wcs’ versions of a function. The one that is more appropriate to use depends on the exact situation. When your program is manipulating arbitrary arrays or blocks of storage, then you should always use the ‘mem’ functions. On the other hand, when you are manipulating strings it is usually more convenient to use the ‘str’/‘wcs’ functions, unless you already know the length of the string in advance. The ‘wmem’ functions should be used for wide character arrays with known size.
+
+Some of the memory and string functions take single characters as arguments. Since a value of type char is automatically promoted into a value of type int when used as a parameter, the functions are declared with int as the type of the parameter in question. In case of the wide character functions the situation is similar: the parameter type for a single wide character is wint_t and not wchar_t. This would for many implementations not be necessary since wchar_t is large enough to not be automatically promoted, but since the ISO C standard does not require such a choice of types the wint_t type is used.
+
+Next: Copying Strings and Arrays, Previous: String and Array Conventions, Up: String and Array Utilities   [Contents][Index]
+
+5.3 String Length
+You can get the length of a string using the strlen function. This function is declared in the header file string.h.
+
+Function: size_t strlen (const char *s)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The strlen function returns the length of the string s in bytes. (In other words, it returns the offset of the terminating null byte within the array.)
+
+For example,
+
+strlen ("hello, world")
+    ⇒ 12
+When applied to an array, the strlen function returns the length of the string stored there, not its allocated size. You can get the allocated size of the array that holds a string using the sizeof operator:
+
+char string[32] = "hello, world";
+sizeof (string)
+    ⇒ 32
+strlen (string)
+    ⇒ 12
+But beware, this will not work unless string is the array itself, not a pointer to it. For example:
+
+char string[32] = "hello, world";
+char *ptr = string;
+sizeof (string)
+    ⇒ 32
+sizeof (ptr)
+    ⇒ 4  /* (on a machine with 4 byte pointers) */
+This is an easy mistake to make when you are working with functions that take string arguments; those arguments are always pointers, not arrays.
+
+It must also be noted that for multibyte encoded strings the return value does not have to correspond to the number of characters in the string. To get this value the string can be converted to wide characters and wcslen can be used or something like the following code can be used:
+
+/* The input is in string.
+   The length is expected in n.  */
+{
+  mbstate_t t;
+  char *scopy = string;
+  /* In initial state.  */
+  memset (&t, '\0', sizeof (t));
+  /* Determine number of characters.  */
+  n = mbsrtowcs (NULL, &scopy, strlen (scopy), &t);
+}
+This is cumbersome to do so if the number of characters (as opposed to bytes) is needed often it is better to work with wide characters.
+
+The wide character equivalent is declared in wchar.h.
+
+Function: size_t wcslen (const wchar_t *ws)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The wcslen function is the wide character equivalent to strlen. The return value is the number of wide characters in the wide string pointed to by ws (this is also the offset of the terminating null wide character of ws).
+
+Since there are no multi wide character sequences making up one wide character the return value is not only the offset in the array, it is also the number of wide characters.
+
+This function was introduced in Amendment 1 to ISO C90.
+
+Function: size_t strnlen (const char *s, size_t maxlen)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+If the array s of size maxlen contains a null byte, the strnlen function returns the length of the string s in bytes. Otherwise it returns maxlen. Therefore this function is equivalent to (strlen (s) < maxlen ? strlen (s) : maxlen) but it is more efficient and works even if s is not null-terminated so long as maxlen does not exceed the size of s’s array.
+
+char string[32] = "hello, world";
+strnlen (string, 32)
+    ⇒ 12
+strnlen (string, 5)
+    ⇒ 5
+This function is a GNU extension and is declared in string.h.
+
+Function: size_t wcsnlen (const wchar_t *ws, size_t maxlen)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+wcsnlen is the wide character equivalent to strnlen. The maxlen parameter specifies the maximum number of wide characters.
+
+This function is a GNU extension and is declared in wchar.h.
+
+void
+launch_process (process *p, pid_t pgid,
+                int infile, int outfile, int errfile,
+                int foreground)
+{
+  pid_t pid;
+
+  if (shell_is_interactive)
+    {
+      /* Put the process into the process group and give the process group
+         the terminal, if appropriate.
+         This has to be done both by the shell and in the individual
+         child processes because of potential race conditions.  */
+      pid = getpid ();
+      if (pgid == 0) pgid = pid;
+      setpgid (pid, pgid);
+      if (foreground)
+        tcsetpgrp (shell_terminal, pgid);
+
+      /* Set the handling for job control signals back to the default.  */
+      signal (SIGINT, SIG_DFL);
+      signal (SIGQUIT, SIG_DFL);
+      signal (SIGTSTP, SIG_DFL);
+      signal (SIGTTIN, SIG_DFL);
+      signal (SIGTTOU, SIG_DFL);
+      signal (SIGCHLD, SIG_DFL);
+    }
+
+  /* Set the standard input/output channels of the new process.  */
+  if (infile != STDIN_FILENO)
+    {
+      dup2 (infile, STDIN_FILENO);
+      close (infile);
+    }
+  if (outfile != STDOUT_FILENO)
+    {
+      dup2 (outfile, STDOUT_FILENO);
+      close (outfile);
+    }
+  if (errfile != STDERR_FILENO)
+    {
+      dup2 (errfile, STDERR_FILENO);
+      close (errfile);
+    }
+
+  /* Exec the new process.  Make sure we exit.  */
+  execvp (p->argv[0], p->argv);
+  perror ("execvp");
+  exit (1);
+}
+If the shell is not running interactively, this function does not do anything with process groups or signals. Remember that a shell not performing job control must keep all of its subprocesses in the same process group as the shell itself.
+
+Next, here is the function that actually launches a complete job. After creating the child processes, this function calls some other functions to put the newly created job into the foreground or background; these are discussed in Foreground and Background.
+
+void
+launch_job (job *j, int foreground)
+{
+  process *p;
+  pid_t pid;
+  int mypipe[2], infile, outfile;
+
+  infile = j->stdin;
+  for (p = j->first_process; p; p = p->next)
+    {
+      /* Set up pipes, if necessary.  */
+      if (p->next)
+        {
+          if (pipe (mypipe) < 0)
+            {
+              perror ("pipe");
+              exit (1);
+            }
+          outfile = mypipe[1];
+        }
+      else
+        outfile = j->stdout;
+
+      /* Fork the child processes.  */
+      pid = fork ();
+      if (pid == 0)
+        /* This is the child process.  */
+        launch_process (p, j->pgid, infile,
+                        outfile, j->stderr, foreground);
+      else if (pid < 0)
+        {
+          /* The fork failed.  */
+          perror ("fork");
+          exit (1);
+        }
+      else
+        {
+          /* This is the parent process.  */
+          p->pid = pid;
+          if (shell_is_interactive)
+            {
+              if (!j->pgid)
+                j->pgid = pid;
+              setpgid (pid, j->pgid);
+            }
+        }
+
+      /* Clean up after pipes.  */
+      if (infile != j->stdin)
+        close (infile);
+      if (outfile != j->stdout)
+        close (outfile);
+      infile = mypipe[0];
+    }
+
+  format_job_info (j, "launched");
+
+  if (!shell_is_interactive)
+    wait_for_job (j);
+  else if (foreground)
+    put_job_in_foreground (j, 0);
+  else
+    put_job_in_background (j, 0);
+}
+Next: Stopped and Terminated Jobs, Previous: Launching Jobs, Up: Implementing a Job Control Shell   [Contents][Index]
+
+28.5.4 Foreground and Background
+Now let’s consider what actions must be taken by the shell when it launches a job into the foreground, and how this differs from what must be done when a background job is launched.
+
+When a foreground job is launched, the shell must first give it access to the controlling terminal by calling tcsetpgrp. Then, the shell should wait for processes in that process group to terminate or stop. This is discussed in more detail in Stopped and Terminated Jobs.
+
+When all of the processes in the group have either completed or stopped, the shell should regain control of the terminal for its own process group by calling tcsetpgrp again. Since stop signals caused by I/O from a background process or a SUSP character typed by the user are sent to the process group, normally all the processes in the job stop together.
+
+The foreground job may have left the terminal in a strange state, so the shell should restore its own saved terminal modes before continuing. In case the job is merely stopped, the shell should first save the current terminal modes so that it can restore them later if the job is continued. The functions for dealing with terminal modes are tcgetattr and tcsetattr; these are described in Terminal Modes.
+
+Here is the sample shell’s function for doing all of this.
+
+/* Put job j in the foreground.  If cont is nonzero,
+   restore the saved terminal modes and send the process group a
+   SIGCONT signal to wake it up before we block.  */
+
+void
+put_job_in_foreground (job *j, int cont)
+{
+  /* Put the job into the foreground.  */
+  tcsetpgrp (shell_terminal, j->pgid);
+
+  /* Send the job a continue signal, if necessary.  */
+  if (cont)
+    {
+      tcsetattr (shell_terminal, TCSADRAIN, &j->tmodes);
+      if (kill (- j->pgid, SIGCONT) < 0)
+        perror ("kill (SIGCONT)");
+    }
+
+  /* Wait for it to report.  */
+  wait_for_job (j);
+
+  /* Put the shell back in the foreground.  */
+  tcsetpgrp (shell_terminal, shell_pgid);
+
+  /* Restore the shell’s terminal modes.  */
+  tcgetattr (shell_terminal, &j->tmodes);
+  tcsetattr (shell_terminal, TCSADRAIN, &shell_tmodes);
+}
+If the process group is launched as a background job, the shell should remain in the foreground itself and continue to read commands from the terminal.
+
+In the sample shell, there is not much that needs to be done to put a job into the background. Here is the function it uses:
+
+/* Put a job in the background.  If the cont argument is true, send
+   the process group a SIGCONT signal to wake it up.  */
+
+void
+put_job_in_background (job *j, int cont)
+{
+  /* Send the job a continue signal, if necessary.  */
+  if (cont)
+    if (kill (-j->pgid, SIGCONT) < 0)
+      perror ("kill (SIGCONT)");
+}
+Next: Continuing Stopped Jobs, Previous: Foreground and Background, Up: Implementing a Job Control Shell   [Contents][Index]
+
+28.5.5 Stopped and Terminated Jobs
+When a foreground process is launched, the shell must block until all of the processes in that job have either terminated or stopped. It can do this by calling the waitpid function; see Process Completion. Use the WUNTRACED option so that status is reported for processes that stop as well as processes that terminate.
+
+The shell must also check on the status of background jobs so that it can report terminated and stopped jobs to the user; this can be done by calling waitpid with the WNOHANG option. A good place to put a such a check for terminated and stopped jobs is just before prompting for a new command.
+
+The shell can also receive asynchronous notification that there is status information available for a child process by establishing a handler for SIGCHLD signals. See Signal Handling.
+
+In the sample shell program, the SIGCHLD signal is normally ignored. This is to avoid reentrancy problems involving the global data structures the shell manipulates. But at specific times when the shell is not using these data structures—such as when it is waiting for input on the terminal—it makes sense to enable a handler for SIGCHLD. The same function that is used to do the synchronous status checks (do_job_notification, in this case) can also be called from within this handler.
+
+Here are the parts of the sample shell program that deal with checking the status of jobs and reporting the information to the user.
+
+/* Store the status of the process pid that was returned by waitpid.
+   Return 0 if all went well, nonzero otherwise.  */
+
+int
+mark_process_status (pid_t pid, int status)
+{
+  job *j;
+  process *p;
+
+  if (pid > 0)
+    {
+      /* Update the record for the process.  */
+      for (j = first_job; j; j = j->next)
+        for (p = j->first_process; p; p = p->next)
+          if (p->pid == pid)
+            {
+              p->status = status;
+              if (WIFSTOPPED (status))
+                p->stopped = 1;
+              else
+                {
+                  p->completed = 1;
+                  if (WIFSIGNALED (status))
+                    fprintf (stderr, "%d: Terminated by signal %d.\n",
+                             (int) pid, WTERMSIG (p->status));
+                }
+              return 0;
+             }
+      fprintf (stderr, "No child process %d.\n", pid);
+      return -1;
+    }
+  else if (pid == 0 || errno == ECHILD)
+    /* No processes ready to report.  */
+    return -1;
+  else {
+    /* Other weird errors.  */
+    perror ("waitpid");
+    return -1;
+  }
+}
+
+/* Check for processes that have status information available,
+   without blocking.  */
+
+void
+update_status (void)
+{
+  int status;
+  pid_t pid;
+
+  do
+    pid = waitpid (WAIT_ANY, &status, WUNTRACED|WNOHANG);
+  while (!mark_process_status (pid, status));
+}
+
+/* Check for processes that have status information available,
+   blocking until all processes in the given job have reported.  */
+
+void
+wait_for_job (job *j)
+{
+  int status;
+  pid_t pid;
+
+  do
+    pid = waitpid (WAIT_ANY, &status, WUNTRACED);
+  while (!mark_process_status (pid, status)
+         && !job_is_stopped (j)
+         && !job_is_completed (j));
+}
+
+/* Format information about job status for the user to look at.  */
+
+void
+format_job_info (job *j, const char *status)
+{
+  fprintf (stderr, "%ld (%s): %s\n", (long)j->pgid, status, j->command);
+}
+
+/* Notify the user about stopped or terminated jobs.
+   Delete terminated jobs from the active job list.  */
+
+void
+do_job_notification (void)
+{
+  job *j, *jlast, *jnext;
+
+  /* Update status information for child processes.  */
+  update_status ();
+
+  jlast = NULL;
+  for (j = first_job; j; j = jnext)
+    {
+      jnext = j->next;
+
+      /* If all processes have completed, tell the user the job has
+         completed and delete it from the list of active jobs.  */
+      if (job_is_completed (j)) {
+        format_job_info (j, "completed");
+        if (jlast)
+          jlast->next = jnext;
+        else
+          first_job = jnext;
+        free_job (j);
+      }
+
+      /* Notify the user about stopped jobs,
+         marking them so that we won’t do this more than once.  */
+      else if (job_is_stopped (j) && !j->notified) {
+        format_job_info (j, "stopped");
+        j->notified = 1;
+        jlast = j;
+      }
+
+      /* Don’t say anything about jobs that are still running.  */
+      else
+        jlast = j;
+    }
+}
+Next: The Missing Pieces, Previous: Stopped and Terminated Jobs, Up: Implementing a Job Control Shell   [Contents][Index]
+
+28.5.6 Continuing Stopped Jobs
+The shell can continue a stopped job by sending a SIGCONT signal to its process group. If the job is being continued in the foreground, the shell should first invoke tcsetpgrp to give the job access to the terminal, and restore the saved terminal settings. After continuing a job in the foreground, the shell should wait for the job to stop or complete, as if the job had just been launched in the foreground.
+
+The sample shell program handles both newly created and continued jobs with the same pair of functions, put_job_in_foreground and put_job_in_background. The definitions of these functions were given in Foreground and Background. When continuing a stopped job, a nonzero value is passed as the cont argument to ensure that the SIGCONT signal is sent and the terminal modes reset, as appropriate.
+
+This leaves only a function for updating the shell’s internal bookkeeping about the job being continued:
+
+/* Mark a stopped job J as being running again.  */
+
+void
+mark_job_as_running (job *j)
+{
+  Process *p;
+
+  for (p = j->first_process; p; p = p->next)
+    p->stopped = 0;
+  j->notified = 0;
+}
+
+/* Continue the job J.  */
+
+void
+continue_job (job *j, int foreground)
+{
+  mark_job_as_running (j);
+  if (foreground)
+    put_job_in_foreground (j, 1);
+  else
+    put_job_in_background (j, 1);
+}
+Previous: Continuing Stopped Jobs, Up: Implementing a Job Control Shell   [Contents][Index]
+
+28.5.7 The Missing Pieces
+The code extracts for the sample shell included in this chapter are only a part of the entire shell program. In particular, nothing at all has been said about how job and program data structures are allocated and initialized.
+
+Most real shells provide a complex user interface that has support for a command language; variables; abbreviations, substitutions, and pattern matching on file names; and the like. All of this is far too complicated to explain here! Instead, we have concentrated on showing how to implement the core process creation and job control functions that can be called from such a shell.
+
+Here is a table summarizing the major entry points we have presented:
+
+void init_shell (void)
+Initialize the shell’s internal state. See Initializing the Shell.
+
+void launch_job (job *j, int foreground)
+Launch the job j as either a foreground or background job. See Launching Jobs.
+
+void do_job_notification (void)
+Check for and report any jobs that have terminated or stopped. Can be called synchronously or within a handler for SIGCHLD signals. See Stopped and Terminated Jobs.
+
+void continue_job (job *j, int foreground)
+Continue the job j. See Continuing Stopped Jobs.
+
+Of course, a real shell would also want to provide other functions for managing jobs. For example, it would be useful to have commands to list all active jobs or to send a signal (such as SIGKILL) to a job.
+
+Previous: Implementing a Job Control Shell, Up: Job Control   [Contents][Index]
+
+28.6 Functions for Job Control
+This section contains detailed descriptions of the functions relating to job control.
+
+Identifying the Controlling Terminal
+Process Group Functions
+Functions for Controlling Terminal Access
+Next: Process Group Functions, Up: Functions for Job Control   [Contents][Index]
+
+28.6.1 Identifying the Controlling Terminal
+You can use the ctermid function to get a file name that you can use to open the controlling terminal. In the GNU C Library, it returns the same string all the time: "/dev/tty". That is a special “magic” file name that refers to the controlling terminal of the current process (if it has one). To find the name of the specific terminal device, use ttyname; see Identifying Terminals.
+
+The function ctermid is declared in the header file stdio.h.
+
+Function: char * ctermid (char *string)
+Preliminary: | MT-Safe !posix/!string | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The ctermid function returns a string containing the file name of the controlling terminal for the current process. If string is not a null pointer, it should be an array that can hold at least L_ctermid characters; the string is returned in this array. Otherwise, a pointer to a string in a static area is returned, which might get overwritten on subsequent calls to this function.
+
+An empty string is returned if the file name cannot be determined for any reason. Even if a file name is returned, access to the file it represents is not guaranteed.
+
+Macro: int L_ctermid
+The value of this macro is an integer constant expression that represents the size of a string large enough to hold the file name returned by ctermid.
+
+See also the isatty and ttyname functions, in Identifying Terminals.
+
+Next: Functions for Controlling Terminal Access, Previous: Identifying the Controlling Terminal, Up: Functions for Job Control   [Contents][Index]
+
+28.6.2 Process Group Functions
+Here are descriptions of the functions for manipulating process groups. Your program should include the header files sys/types.h and unistd.h to use these functions.
+
+Function: pid_t setsid (void)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The setsid function creates a new session. The calling process becomes the session leader, and is put in a new process group whose process group ID is the same as the process ID of that process. There are initially no other processes in the new process group, and no other process groups in the new session.
+
+This function also makes the calling process have no controlling terminal.
+
+The setsid function returns the new process group ID of the calling process if successful. A return value of -1 indicates an error. The following errno error conditions are defined for this function:
+
+EPERM
+The calling process is already a process group leader, or there is already another process group around that has the same process group ID.
+
+Function: pid_t getsid (pid_t pid)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The getsid function returns the process group ID of the session leader of the specified process. If a pid is 0, the process group ID of the session leader of the current process is returned.
+
+In case of error -1 is returned and errno is set. The following errno error conditions are defined for this function:
+
+ESRCH
+There is no process with the given process ID pid.
+
+EPERM
+The calling process and the process specified by pid are in different sessions, and the implementation doesn’t allow to access the process group ID of the session leader of the process with ID pid from the calling process.
+
+Function: pid_t getpgrp (void)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The getpgrp function returns the process group ID of the calling process.
+
+Function: int getpgid (pid_t pid)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The getpgid function returns the process group ID of the process pid. You can supply a value of 0 for the pid argument to get information about the calling process.
+
+In case of error -1 is returned and errno is set. The following errno error conditions are defined for this function:
+
+ESRCH
+There is no process with the given process ID pid. The calling process and the process specified by pid are in different sessions, and the implementation doesn’t allow to access the process group ID of the process with ID pid from the calling process.
+
+Function: int setpgid (pid_t pid, pid_t pgid)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The setpgid function puts the process pid into the process group pgid. As a special case, either pid or pgid can be zero to indicate the process ID of the calling process.
+
+If the operation is successful, setpgid returns zero. Otherwise it returns -1. The following errno error conditions are defined for this function:
+
+EACCES
+The child process named by pid has executed an exec function since it was forked.
+
+EINVAL
+The value of the pgid is not valid.
+
+ENOSYS
+The system doesn’t support job control.
+
+EPERM
+The process indicated by the pid argument is a session leader, or is not in the same session as the calling process, or the value of the pgid argument doesn’t match a process group ID in the same session as the calling process.
+
+ESRCH
+The process indicated by the pid argument is not the calling process or a child of the calling process.
+
+Function: int setpgrp (pid_t pid, pid_t pgid)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This is the BSD Unix name for setpgid. Both functions do exactly the same thing.
+
+Previous: Process Group Functions, Up: Functions for Job Control   [Contents][Index]
+
+28.6.3 Functions for Controlling Terminal Access
+These are the functions for reading or setting the foreground process group of a terminal. You should include the header files sys/types.h and unistd.h in your application to use these functions.
+
+Although these functions take a file descriptor argument to specify the terminal device, the foreground job is associated with the terminal file itself and not a particular open file descriptor.
+
+Function: pid_t tcgetpgrp (int filedes)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the process group ID of the foreground process group associated with the terminal open on descriptor filedes.
+
+If there is no foreground process group, the return value is a number greater than 1 that does not match the process group ID of any existing process group. This can happen if all of the processes in the job that was formerly the foreground job have terminated, and no other job has yet been moved into the foreground.
+
+In case of an error, a value of -1 is returned. The following errno error conditions are defined for this function:
+
+EBADF
+The filedes argument is not a valid file descriptor.
+
+ENOSYS
+The system doesn’t support job control.
+
+ENOTTY
+The terminal file associated with the filedes argument isn’t the controlling terminal of the calling process.
+
+Function: int tcsetpgrp (int filedes, pid_t pgid)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is used to set a terminal’s foreground process group ID. The argument filedes is a descriptor which specifies the terminal; pgid specifies the process group. The calling process must be a member of the same session as pgid and must have the same controlling terminal.
+
+For terminal access purposes, this function is treated as output. If it is called from a background process on its controlling terminal, normally all processes in the process group are sent a SIGTTOU signal. The exception is if the calling process itself is ignoring or blocking SIGTTOU signals, in which case the operation is performed and no signal is sent.
+
+If successful, tcsetpgrp returns 0. A return value of -1 indicates an error. The following errno error conditions are defined for this function:
+
+EBADF
+The filedes argument is not a valid file descriptor.
+
+EINVAL
+The pgid argument is not valid.
+
+ENOSYS
+The system doesn’t support job control.
+
+ENOTTY
+The filedes isn’t the controlling terminal of the calling process.
+
+EPERM
+The pgid isn’t a process group in the same session as the calling process.
+
+Function: pid_t tcgetsid (int fildes)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is used to obtain the process group ID of the session for which the terminal specified by fildes is the controlling terminal. If the call is successful the group ID is returned. Otherwise the return value is (pid_t) -1 and the global variable errno is set to the following value:
+
+EBADF
+The filedes argument is not a valid file descriptor.
+
+ENOTTY
+The calling process does not have a controlling terminal, or the file is not the controlling terminal.
+
+Next: Users and Groups, Previous: Job Control, Up: Main Menu   [Contents][Index]
+
+29 System Databases and Name Service Switch
+Various functions in the C Library need to be configured to work correctly in the local environment. Traditionally, this was done by using files (e.g., /etc/passwd), but other nameservices (like the Network Information Service (NIS) and the Domain Name Service (DNS)) became popular, and were hacked into the C library, usually with a fixed search order.
+
+The GNU C Library contains a cleaner solution to this problem. It is designed after a method used by Sun Microsystems in the C library of Solaris 2. The GNU C Library follows their name and calls this scheme Name Service Switch (NSS).
+
+Though the interface might be similar to Sun’s version there is no common code. We never saw any source code of Sun’s implementation and so the internal interface is incompatible. This also manifests in the file names we use as we will see later.
+
+NSS Basics
+The NSS Configuration File
+NSS Module Internals
+Extending NSS
+Next: The NSS Configuration File, Previous: System Databases and Name Service Switch, Up: System Databases and Name Service Switch   [Contents][Index]
+
+29.1 NSS Basics
+The basic idea is to put the implementation of the different services offered to access the databases in separate modules. This has some advantages:
+
+Contributors can add new services without adding them to the GNU C Library.
+The modules can be updated separately.
+The C library image is smaller.
+To fulfill the first goal above, the ABI of the modules will be described below. For getting the implementation of a new service right it is important to understand how the functions in the modules get called. They are in no way designed to be used by the programmer directly. Instead the programmer should only use the documented and standardized functions to access the databases.
+
+The databases available in the NSS are
+
+aliases
+Mail aliases
+
+ethers
+Ethernet numbers,
+
+group
+Groups of users, see Group Database.
+
+gshadow
+Group passphrase hashes and related information.
+
+hosts
+Host names and numbers, see Host Names.
+
+initgroups
+Supplementary group access list.
+
+netgroup
+Network wide list of host and users, see Netgroup Database.
+
+networks
+Network names and numbers, see Networks Database.
+
+passwd
+User identities, see User Database.
+
+protocols
+Network protocols, see Protocols Database.
+
+publickey
+Public keys for Secure RPC.
+
+rpc
+Remote procedure call names and numbers.
+
+services
+Network services, see The Services Database.
+
+shadow
+User passphrase hashes and related information.
+
+More databases may be added later.
+
+Next: NSS Module Internals, Previous: NSS Basics, Up: System Databases and Name Service Switch   [Contents][Index]
+
+29.2 The NSS Configuration File
+Somehow the NSS code must be told about the wishes of the user. For this reason there is the file /etc/nsswitch.conf. For each database, this file contains a specification of how the lookup process should work. The file could look like this:
+
+# /etc/nsswitch.conf
+#
+# Name Service Switch configuration file.
+#
+
+passwd:     db files
+shadow:     files
+group:      db files
+
+hosts:      files dns
+networks:   files
+
+ethers:     db files
+protocols:  db files
+rpc:        db files
+services:   db files
+The first column is the database as you can guess from the table above. The rest of the line specifies how the lookup process works. Please note that you specify the way it works for each database individually. This cannot be done with the old way of a monolithic implementation.
+
+The configuration specification for each database can contain two different items:
+
+the service specification like files, db, or nis.
+the reaction on lookup result like [NOTFOUND=return].
+Services in the NSS configuration File
+Actions in the NSS configuration
+Notes on the NSS Configuration File
+Next: Actions in the NSS configuration, Previous: The NSS Configuration File, Up: The NSS Configuration File   [Contents][Index]
+
+29.2.1 Services in the NSS configuration File
+The above example file mentions five different services: files, db, dns, nis, and nisplus. This does not mean these services are available on all sites and neither does it mean these are all the services which will ever be available.
+
+In fact, these names are simply strings which the NSS code uses to find the implicitly addressed functions. The internal interface will be described later. Visible to the user are the modules which implement an individual service.
+
+Assume the service name shall be used for a lookup. The code for this service is implemented in a module called libnss_name. On a system supporting shared libraries this is in fact a shared library with the name (for example) libnss_name.so.2. The number at the end is the currently used version of the interface which will not change frequently. Normally the user should not have to be cognizant of these files since they should be placed in a directory where they are found automatically. Only the names of all available services are important.
+
+Lastly, some system software may make use of the NSS configuration file to store their own configuration for similar purposes. Examples of this include the automount service which is used by autofs.
+
+Next: Notes on the NSS Configuration File, Previous: Services in the NSS configuration File, Up: The NSS Configuration File   [Contents][Index]
+
+29.2.2 Actions in the NSS configuration
+The second item in the specification gives the user much finer control on the lookup process. Action items are placed between two service names and are written within brackets. The general form is
+
+[ ( !? status = action )+ ]
+where
+
+status ⇒ success | notfound | unavail | tryagain
+action ⇒ return | continue
+The case of the keywords is insignificant. The status values are the results of a call to a lookup function of a specific service. They mean:
+
+‘success’
+No error occurred and the wanted entry is returned. The default action for this is return.
+
+‘notfound’
+The lookup process works ok but the needed value was not found. The default action is continue.
+
+‘unavail’
+The service is permanently unavailable. This can either mean the needed file is not available, or, for DNS, the server is not available or does not allow queries. The default action is continue.
+
+‘tryagain’
+The service is temporarily unavailable. This could mean a file is locked or a server currently cannot accept more connections. The default action is continue.
+
+The action values mean:
+
+‘return’
+If the status matches, stop the lookup process at this service specification. If an entry is available, provide it to the application. If an error occurred, report it to the application. In case of a prior ‘merge’ action, the data is combined with previous lookup results, as explained below.
+
+‘continue’
+If the status matches, proceed with the lookup process at the next entry, discarding the result of the current lookup (and any merged data). An exception is the ‘initgroups’ database and the ‘success’ status, where ‘continue’ acts like merge below.
+
+‘merge’
+Proceed with the lookup process, retaining the current lookup result. This action is useful only with the ‘success’ status. If a subsequent service lookup succeeds and has a matching ‘return’ specification, the results are merged, the lookup process ends, and the merged results are returned to the application. If the following service has a matching ‘merge’ action, the lookup process continues, retaining the combined data from this and any previous lookups.
+
+After a merge action, errors from subsequent lookups are ignored, and the data gathered so far will be returned.
+
+The ‘merge’ only applies to the ‘success’ status. It is currently implemented for the ‘group’ database and its group members field, ‘gr_mem’. If specified for other databases, it causes the lookup to fail (if the status matches).
+
+When processing ‘merge’ for ‘group’ membership, the group GID and name must be identical for both entries. If only one or the other is a match, the behavior is undefined.
+
+If we have a line like
+
+ethers: nisplus [NOTFOUND=return] db files
+this is equivalent to
+
+ethers: nisplus [SUCCESS=return NOTFOUND=return UNAVAIL=continue
+                 TRYAGAIN=continue]
+        db      [SUCCESS=return NOTFOUND=continue UNAVAIL=continue
+                 TRYAGAIN=continue]
+        files
+(except that it would have to be written on one line). The default value for the actions are normally what you want, and only need to be changed in exceptional cases.
+
+If the optional ! is placed before the status this means the following action is used for all statuses but status itself. I.e., ! is negation as in the C language (and others).
+
+Before we explain the exception which makes this action item necessary one more remark: obviously it makes no sense to add another action item after the files service. Since there is no other service following the action always is return.
+
+Now, why is this [NOTFOUND=return] action useful? To understand this we should know that the nisplus service is often complete; i.e., if an entry is not available in the NIS+ tables it is not available anywhere else. This is what is expressed by this action item: it is useless to examine further services since they will not give us a result.
+
+The situation would be different if the NIS+ service is not available because the machine is booting. In this case the return value of the lookup function is not notfound but instead unavail. And as you can see in the complete form above: in this situation the db and files services are used. Neat, isn’t it? The system administrator need not pay special care for the time the system is not completely ready to work (while booting or shutdown or network problems).
+
+Previous: Actions in the NSS configuration, Up: The NSS Configuration File   [Contents][Index]
+
+29.2.3 Notes on the NSS Configuration File
+Finally a few more hints. The NSS implementation is not completely helpless if /etc/nsswitch.conf does not exist. For all supported databases there is a default value so it should normally be possible to get the system running even if the file is corrupted or missing.
+
+For the hosts and networks databases the default value is files dns. I.e., local configuration will override the contents of the domain name system (DNS).
+
+The passwd, group, and shadow databases was traditionally handled in a special way. The appropriate files in the /etc directory were read but if an entry with a name starting with a + character was found NIS was used. This kind of lookup was removed and now the default value for the services is files. libnss_compat no longer depends on libnsl and can be used without NIS.
+
+For all other databases the default value is files.
+
+A second point is that the user should try to optimize the lookup process. The different service have different response times. A simple file look up on a local file could be fast, but if the file is long and the needed entry is near the end of the file this may take quite some time. In this case it might be better to use the db service which allows fast local access to large data sets.
+
+Often the situation is that some global information like NIS must be used. So it is unavoidable to use service entries like nis etc. But one should avoid slow services like this if possible.
+
+Next: Extending NSS, Previous: The NSS Configuration File, Up: System Databases and Name Service Switch   [Contents][Index]
+
+29.3 NSS Module Internals
+Now it is time to describe what the modules look like. The functions contained in a module are identified by their names. I.e., there is no jump table or the like. How this is done is of no interest here; those interested in this topic should read about Dynamic Linking.
+
+The Naming Scheme of the NSS Modules
+The Interface of the Function in NSS Modules
+Next: The Interface of the Function in NSS Modules, Previous: NSS Module Internals, Up: NSS Module Internals   [Contents][Index]
+
+29.3.1 The Naming Scheme of the NSS Modules
+The name of each function consists of various parts:
+
+_nss_service_function
+
+service of course corresponds to the name of the module this function is found in.4 The function part is derived from the interface function in the C library itself. If the user calls the function gethostbyname and the service used is files the function
+
+       _nss_files_gethostbyname_r
+in the module
+
+       libnss_files.so.2
+is used. You see, what is explained above in not the whole truth. In fact the NSS modules only contain reentrant versions of the lookup functions. I.e., if the user would call the gethostbyname_r function this also would end in the above function. For all user interface functions the C library maps this call to a call to the reentrant function. For reentrant functions this is trivial since the interface is (nearly) the same. For the non-reentrant version the library keeps internal buffers which are used to replace the user supplied buffer.
+
+I.e., the reentrant functions can have counterparts. No service module is forced to have functions for all databases and all kinds to access them. If a function is not available it is simply treated as if the function would return unavail (see Actions in the NSS configuration).
+
+The file name libnss_files.so.2 would be on a Solaris 2 system nss_files.so.2. This is the difference mentioned above. Sun’s NSS modules are usable as modules which get indirectly loaded only.
+
+The NSS modules in the GNU C Library are prepared to be used as normal libraries themselves. This is not true at the moment, though. However, the organization of the name space in the modules does not make it impossible like it is for Solaris. Now you can see why the modules are still libraries.5
+
+Previous: The Naming Scheme of the NSS Modules, Up: NSS Module Internals   [Contents][Index]
+
+29.3.2 The Interface of the Function in NSS Modules
+Now we know about the functions contained in the modules. It is now time to describe the types. When we mentioned the reentrant versions of the functions above, this means there are some additional arguments (compared with the standard, non-reentrant versions). The prototypes for the non-reentrant and reentrant versions of our function above are:
+
+struct hostent *gethostbyname (const char *name)
+
+int gethostbyname_r (const char *name, struct hostent *result_buf,
+                     char *buf, size_t buflen, struct hostent **result,
+                     int *h_errnop)
+The actual prototype of the function in the NSS modules in this case is
+
+enum nss_status _nss_files_gethostbyname_r (const char *name,
+                                            struct hostent *result_buf,
+                                            char *buf, size_t buflen,
+                                            int *errnop, int *h_errnop)
+I.e., the interface function is in fact the reentrant function with the change of the return value, the omission of the result parameter, and the addition of the errnop parameter. While the user-level function returns a pointer to the result the reentrant function return an enum nss_status value:
+
+NSS_STATUS_TRYAGAIN
+numeric value -2
+
+NSS_STATUS_UNAVAIL
+numeric value -1
+
+NSS_STATUS_NOTFOUND
+numeric value 0
+
+NSS_STATUS_SUCCESS
+numeric value 1
+
+Now you see where the action items of the /etc/nsswitch.conf file are used.
+
+If you study the source code you will find there is a fifth value: NSS_STATUS_RETURN. This is an internal use only value, used by a few functions in places where none of the above value can be used. If necessary the source code should be examined to learn about the details.
+
+In case the interface function has to return an error it is important that the correct error code is stored in *errnop. Some return status values have only one associated error code, others have more.
+
+NSS_STATUS_TRYAGAIN	EAGAIN	One of the functions used ran temporarily out of resources or a service is currently not available.
+ERANGE	The provided buffer is not large enough. The function should be called again with a larger buffer.
+NSS_STATUS_UNAVAIL	ENOENT	A necessary input file cannot be found.
+NSS_STATUS_NOTFOUND	ENOENT	The requested entry is not available.
+NSS_STATUS_NOTFOUND	SUCCESS	There are no entries. Use this to avoid returning errors for inactive services which may be enabled at a later time. This is not the same as the service being temporarily unavailable.
+These are proposed values. There can be other error codes and the described error codes can have different meaning. With one exception: when returning NSS_STATUS_TRYAGAIN the error code ERANGE must mean that the user provided buffer is too small. Everything else is non-critical.
+
+In statically linked programs, the main application and NSS modules do not share the same thread-local variable errno, which is the reason why there is an explicit errnop function argument.
+
+The above function has something special which is missing for almost all the other module functions. There is an argument h_errnop. This points to a variable which will be filled with the error code in case the execution of the function fails for some reason. (In statically linked programs, the thread-local variable h_errno is not shared with the main application.)
+
+The getXXXbyYYY functions are the most important functions in the NSS modules. But there are others which implement the other ways to access system databases (say for the user database, there are setpwent, getpwent, and endpwent). These will be described in more detail later. Here we give a general way to determine the signature of the module function:

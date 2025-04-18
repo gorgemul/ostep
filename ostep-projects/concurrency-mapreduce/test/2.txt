@@ -1,0 +1,1999 @@
+A random paragraph can also be an excellent way for a writer to tackle writers' block. Writing block can often happen due to being stuck with a current project that the writer is trying to complete. By inserting a completely random paragraph from which to begin, it can take down some of the issues that may have been causing the writers' block in the first place.Typically, ‘#include’ directives are placed at the top of the C source file, before any other code. If you begin your source files with some comments explaining what the code in the file does (a good idea), put the ‘#include’ directives immediately afterwards, following the feature test macro definition (see Feature Test Macros).
+
+For more information about the use of header files and ‘#include’ directives, see Header Files in The GNU C Preprocessor Manual.
+
+The GNU C Library provides several header files, each of which contains the type and macro definitions and variable and function declarations for a group of related facilities. This means that your programs may need to include several header files, depending on exactly which facilities you are using.
+
+Some library header files include other library header files automatically. However, as a matter of programming style, you should not rely on this; it is better to explicitly include all the header files required for the library facilities you are using. The GNU C Library header files have been written in such a way that it doesn’t matter if a header file is accidentally included more than once; including a header file a second time has no effect. Likewise, if your program needs to include multiple header files, the order in which they are included doesn’t matter.
+
+Compatibility Note: Inclusion of standard header files in any order and any number of times works in any ISO C implementation. However, this has traditionally not been the case in many older C implementations.
+
+Strictly speaking, you don’t have to include a header file to use a function it declares; you could declare the function explicitly yourself, according to the specifications in this manual. But it is usually better to include the header file because it may define types and macros that are not otherwise available and because it may define more efficient macro replacements for some functions. It is also a sure way to have the correct declaration.
+
+Next: Reserved Names, Previous: Header Files, Up: Using the Library   [Contents][Index]
+
+1.3.2 Macro Definitions of Functions
+If we describe something as a function in this manual, it may have a macro definition as well. This normally has no effect on how your program runs—the macro definition does the same thing as the function would. In particular, macro equivalents for library functions evaluate arguments exactly once, in the same way that a function call would. The main reason for these macro definitions is that sometimes they can produce an inline expansion that is considerably faster than an actual function call.
+
+Taking the address of a library function works even if it is also defined as a macro. This is because, in this context, the name of the function isn’t followed by the left parenthesis that is syntactically necessary to recognize a macro call.
+
+You might occasionally want to avoid using the macro definition of a function—perhaps to make your program easier to debug. There are two ways you can do this:
+
+You can avoid a macro definition in a specific use by enclosing the name of the function in parentheses. This works because the name of the function doesn’t appear in a syntactic context where it is recognizable as a macro call.
+You can suppress any macro definition for a whole source file by using the ‘#undef’ preprocessor directive, unless otherwise stated explicitly in the description of that facility.
+For example, suppose the header file stdlib.h declares a function named abs with
+
+extern int abs (int);
+and also provides a macro definition for abs. Then, in:
+
+#include <stdlib.h>
+int f (int *i) { return abs (++*i); }
+the reference to abs might refer to either a macro or a function. On the other hand, in each of the following examples the reference is to a function and not a macro.
+
+#include <stdlib.h>
+int g (int *i) { return (abs) (++*i); }
+
+#undef abs
+int h (int *i) { return abs (++*i); }
+Since macro definitions that double for a function behave in exactly the same way as the actual function version, there is usually no need for any of these methods. In fact, removing macro definitions usually just makes your program slower.
+
+Next: Feature Test Macros, Previous: Macro Definitions of Functions, Up: Using the Library   [Contents][Index]
+
+1.3.3 Reserved Names
+The names of all library types, macros, variables and functions that come from the ISO C standard are reserved unconditionally; your program may not redefine these names. All other library names are reserved if your program explicitly includes the header file that defines or declares them. There are several reasons for these restrictions:
+
+Other people reading your code could get very confused if you were using a function named exit to do something completely different from what the standard exit function does, for example. Preventing this situation helps to make your programs easier to understand and contributes to modularity and maintainability.
+It avoids the possibility of a user accidentally redefining a library function that is called by other library functions. If redefinition were allowed, those other functions would not work properly.
+It allows the compiler to do whatever special optimizations it pleases on calls to these functions, without the possibility that they may have been redefined by the user. Some library facilities, such as those for dealing with variadic arguments (see Variadic Functions) and non-local exits (see Non-Local Exits), actually require a considerable amount of cooperation on the part of the C compiler, and with respect to the implementation, it might be easier for the compiler to treat these as built-in parts of the language.
+In addition to the names documented in this manual, reserved names include all external identifiers (global functions and variables) that begin with an underscore (‘_’) and all identifiers regardless of use that begin with either two underscores or an underscore followed by a capital letter are reserved names. This is so that the library and header files can define functions, variables, and macros for internal purposes without risk of conflict with names in user programs.
+
+Some additional classes of identifier names are reserved for future extensions to the C language or the POSIX.1 environment. While using these names for your own purposes right now might not cause a problem, they do raise the possibility of conflict with future versions of the C or POSIX standards, so you should avoid these names.
+
+Names beginning with a capital ‘E’ followed a digit or uppercase letter may be used for additional error code names. See Error Reporting.
+Names that begin with either ‘is’ or ‘to’ followed by a lowercase letter may be used for additional character testing and conversion functions. See Character Handling.
+Names that begin with ‘LC_’ followed by an uppercase letter may be used for additional macros specifying locale attributes. See Locales and Internationalization.
+Names of all existing mathematics functions (see Mathematics) suffixed with ‘f’ or ‘l’ are reserved for corresponding functions that operate on float and long double arguments, respectively.
+Names that begin with ‘SIG’ followed by an uppercase letter are reserved for additional signal names. See Standard Signals.
+Names that begin with ‘SIG_’ followed by an uppercase letter are reserved for additional signal actions. See Basic Signal Handling.
+Names beginning with ‘str’, ‘mem’, or ‘wcs’ followed by a lowercase letter are reserved for additional string and array functions. See String and Array Utilities.
+Names that end with ‘_t’ are reserved for additional type names.
+In addition, some individual header files reserve names beyond those that they actually define. You only need to worry about these restrictions if your program includes that particular header file.
+
+The header file dirent.h reserves names prefixed with ‘d_’.
+The header file fcntl.h reserves names prefixed with ‘l_’, ‘F_’, ‘O_’, and ‘S_’.
+The header file grp.h reserves names prefixed with ‘gr_’.
+The header file limits.h reserves names suffixed with ‘_MAX’.
+The header file pwd.h reserves names prefixed with ‘pw_’.
+The header file signal.h reserves names prefixed with ‘sa_’ and ‘SA_’.
+The header file sys/stat.h reserves names prefixed with ‘st_’ and ‘S_’.
+The header file sys/times.h reserves names prefixed with ‘tms_’.
+The header file termios.h reserves names prefixed with ‘c_’, ‘V’, ‘I’, ‘O’, and ‘TC’; and names prefixed with ‘B’ followed by a digit.
+Previous: Reserved Names, Up: Using the Library   [Contents][Index]
+
+1.3.4 Feature Test Macros
+The exact set of features available when you compile a source file is controlled by which feature test macros you define.
+
+If you compile your programs using ‘gcc -ansi’, you get only the ISO C library features, unless you explicitly request additional features by defining one or more of the feature macros. See GNU CC Command Options in The GNU CC Manual, for more information about GCC options.
+
+You should define these macros by using ‘#define’ preprocessor directives at the top of your source code files. These directives must come before any #include of a system header file. It is best to make them the very first thing in the file, preceded only by comments. You could also use the ‘-D’ option to GCC, but it’s better if you make the source files indicate their own meaning in a self-contained way.
+
+This system exists to allow the library to conform to multiple standards. Although the different standards are often described as supersets of each other, they are usually incompatible because larger standards require functions with names that smaller ones reserve to the user program. This is not mere pedantry — it has been a problem in practice. For instance, some non-GNU programs define functions named getline that have nothing to do with this library’s getline. They would not be compilable if all features were enabled indiscriminately.
+
+This should not be used to verify that a program conforms to a limited standard. It is insufficient for this purpose, as it will not protect you from including header files outside the standard, or relying on semantics undefined within the standard.
+
+Macro: _POSIX_SOURCE
+If you define this macro, then the functionality from the POSIX.1 standard (IEEE Standard 1003.1) is available, as well as all of the ISO C facilities.
+
+The state of _POSIX_SOURCE is irrelevant if you define the macro _POSIX_C_SOURCE to a positive integer.
+
+Macro: _POSIX_C_SOURCE
+Define this macro to a positive integer to control which POSIX functionality is made available. The greater the value of this macro, the more functionality is made available.
+
+If you define this macro to a value greater than or equal to 1, then the functionality from the 1990 edition of the POSIX.1 standard (IEEE Standard 1003.1-1990) is made available.
+
+If you define this macro to a value greater than or equal to 2, then the functionality from the 1992 edition of the POSIX.2 standard (IEEE Standard 1003.2-1992) is made available.
+
+If you define this macro to a value greater than or equal to 199309L, then the functionality from the 1993 edition of the POSIX.1b standard (IEEE Standard 1003.1b-1993) is made available.
+
+If you define this macro to a value greater than or equal to 199506L, then the functionality from the 1995 edition of the POSIX.1c standard (IEEE Standard 1003.1c-1995) is made available.
+
+If you define this macro to a value greater than or equal to 200112L, then the functionality from the 2001 edition of the POSIX standard (IEEE Standard 1003.1-2001) is made available.
+
+If you define this macro to a value greater than or equal to 200809L, then the functionality from the 2008 edition of the POSIX standard (IEEE Standard 1003.1-2008) is made available.
+
+Greater values for _POSIX_C_SOURCE will enable future extensions. The POSIX standards process will define these values as necessary, and the GNU C Library should support them some time after they become standardized. The 1996 edition of POSIX.1 (ISO/IEC 9945-1: 1996) states that if you define _POSIX_C_SOURCE to a value greater than or equal to 199506L, then the functionality from the 1996 edition is made available. In general, in the GNU C Library, bugfixes to the standards are included when specifying the base version; e.g., POSIX.1-2004 will always be included with a value of 200112L.
+
+Macro: _XOPEN_SOURCE
+Macro: _XOPEN_SOURCE_EXTENDED
+If you define this macro, functionality described in the X/Open Portability Guide is included. This is a superset of the POSIX.1 and POSIX.2 functionality and in fact _POSIX_SOURCE and _POSIX_C_SOURCE are automatically defined.
+
+As the unification of all Unices, functionality only available in BSD and SVID is also included.
+
+If the macro _XOPEN_SOURCE_EXTENDED is also defined, even more functionality is available. The extra functions will make all functions available which are necessary for the X/Open Unix brand.
+
+If the macro _XOPEN_SOURCE has the value 500 this includes all functionality described so far plus some new definitions from the Single Unix Specification, version 2. The value 600 (corresponding to the sixth revision) includes definitions from SUSv3, and using 700 (the seventh revision) includes definitions from SUSv4.
+
+Macro: _LARGEFILE_SOURCE
+If this macro is defined some extra functions are available which rectify a few shortcomings in all previous standards. Specifically, the functions fseeko and ftello are available. Without these functions the difference between the ISO C interface (fseek, ftell) and the low-level POSIX interface (lseek) would lead to problems.
+
+This macro was introduced as part of the Large File Support extension (LFS).
+
+Macro: _LARGEFILE64_SOURCE
+If you define this macro an additional set of functions is made available which enables 32 bit systems to use files of sizes beyond the usual limit of 2GB. This interface is not available if the system does not support files that large. On systems where the natural file size limit is greater than 2GB (i.e., on 64 bit systems) the new functions are identical to the replaced functions.
+
+The new functionality is made available by a new set of types and functions which replace the existing ones. The names of these new objects contain 64 to indicate the intention, e.g., off_t vs. off64_t and fseeko vs. fseeko64.
+
+This macro was introduced as part of the Large File Support extension (LFS). It is a transition interface for the period when 64 bit offsets are not generally used (see _FILE_OFFSET_BITS).
+
+Macro: _FILE_OFFSET_BITS
+This macro determines which file system interface shall be used, one replacing the other. Whereas _LARGEFILE64_SOURCE makes the 64 bit interface available as an additional interface, _FILE_OFFSET_BITS allows the 64 bit interface to replace the old interface.
+
+If _FILE_OFFSET_BITS is defined to the value 32, the 32 bit interface is used and types like off_t have a size of 32 bits on 32 bit systems.
+
+If the macro is defined to the value 64, the large file interface replaces the old interface. I.e., the functions are not made available under different names (as they are with _LARGEFILE64_SOURCE). Instead the old function names now reference the new functions, e.g., a call to fseeko now indeed calls fseeko64.
+
+If the macro is not defined it currently defaults to 32, but this default is planned to change due to a need to update time_t for Y2038 safety, and applications should not rely on the default.
+
+This macro should only be selected if the system provides mechanisms for handling large files. On 64 bit systems this macro has no effect since the *64 functions are identical to the normal functions.
+
+This macro was introduced as part of the Large File Support extension (LFS).
+
+Macro: _TIME_BITS
+Define this macro to control the bit size of time_t, and therefore the bit size of all time_t-derived types and the prototypes of all related functions.
+
+If _TIME_BITS is undefined, the bit size of time_t is architecture dependent. Currently it defaults to 64 bits on most architectures. Although it defaults to 32 bits on some traditional architectures (i686, ARM), this is planned to change and applications should not rely on this.
+If _TIME_BITS is defined to be 64, time_t is defined to be a 64-bit integer. On platforms where time_t was traditionally 32 bits, calls to proper syscalls depend on the Linux kernel version on which the system is running. For Linux kernel version above 5.1 syscalls supporting 64-bit time are used. Otherwise, a fallback code is used with legacy (i.e. 32-bit) syscalls.
+If _TIME_BITS is defined to be 32, time_t is defined to be a 32-bit integer where that is supported. This is not recommended, as 32-bit time_t stops working in the year 2038.
+For any other use case a compile-time error is emitted.
+_TIME_BITS=64 can be defined only when _FILE_OFFSET_BITS=64 is also defined.
+
+By using this macro certain ports gain support for 64-bit time and as a result become immune to the Y2038 problem.
+
+Macro: _ISOC99_SOURCE
+If this macro is defined, features from ISO C99 are included. Since these features are included by default, this macro is mostly relevant when the compiler uses an earlier language version.
+
+Macro: _ISOC11_SOURCE
+If this macro is defined, ISO C11 extensions to ISO C99 are included.
+
+Macro: _ISOC2X_SOURCE
+If this macro is defined, ISO C2X extensions to ISO C11 are included. Only some features from this draft standard are supported by the GNU C Library.
+
+Macro: __STDC_WANT_LIB_EXT2__
+If you define this macro to the value 1, features from ISO/IEC TR 24731-2:2010 (Dynamic Allocation Functions) are enabled. Only some of the features from this TR are supported by the GNU C Library.
+
+Macro: __STDC_WANT_IEC_60559_BFP_EXT__
+If you define this macro, features from ISO/IEC TS 18661-1:2014 (Floating-point extensions for C: Binary floating-point arithmetic) are enabled. Only some of the features from this TS are supported by the GNU C Library.
+
+Macro: __STDC_WANT_IEC_60559_FUNCS_EXT__
+If you define this macro, features from ISO/IEC TS 18661-4:2015 (Floating-point extensions for C: Supplementary functions) are enabled. Only some of the features from this TS are supported by the GNU C Library.
+
+Macro: __STDC_WANT_IEC_60559_TYPES_EXT__
+If you define this macro, features from ISO/IEC TS 18661-3:2015 (Floating-point extensions for C: Interchange and extended types) are enabled. Only some of the features from this TS are supported by the GNU C Library.
+
+Macro: __STDC_WANT_IEC_60559_EXT__
+If you define this macro, ISO C2X features defined in Annex F of that standard are enabled. This affects declarations of the totalorder functions and functions related to NaN payloads.
+
+Macro: _GNU_SOURCE
+If you define this macro, everything is included: ISO C89, ISO C99, POSIX.1, POSIX.2, BSD, SVID, X/Open, LFS, and GNU extensions. In the cases where POSIX.1 conflicts with BSD, the POSIX definitions take precedence.
+
+Macro: _DEFAULT_SOURCE
+If you define this macro, most features are included apart from X/Open, LFS and GNU extensions: the effect is to enable features from the 2008 edition of POSIX, as well as certain BSD and SVID features without a separate feature test macro to control them.
+
+Be aware that compiler options also affect included features:
+
+If you use a strict conformance option, features beyond those from the compiler’s language version will be disabled, though feature test macros may be used to enable them.
+Features enabled by compiler options are not overridden by feature test macros.
+Macro: _ATFILE_SOURCE
+If this macro is defined, additional *at interfaces are included.
+
+Macro: _FORTIFY_SOURCE
+If this macro is defined to 1, security hardening is added to various library functions. If defined to 2, even stricter checks are applied. If defined to 3, the GNU C Library may also use checks that may have an additional performance overhead. See Fortification of function calls.
+
+Macro: _DYNAMIC_STACK_SIZE_SOURCE
+If this macro is defined, correct (but non compile-time constant) MINSIGSTKSZ, SIGSTKSZ and PTHREAD_STACK_MIN are defined.
+
+Macro: _REENTRANT
+Macro: _THREAD_SAFE
+These macros are obsolete. They have the same effect as defining _POSIX_C_SOURCE with the value 199506L.
+
+Some very old C libraries required one of these macros to be defined for basic functionality (e.g. getchar) to be thread-safe.
+
+We recommend you use _GNU_SOURCE in new programs. If you don’t specify the ‘-ansi’ option to GCC, or other conformance options such as -std=c99, and don’t define any of these macros explicitly, the effect is the same as defining _DEFAULT_SOURCE to 1.
+
+When you define a feature test macro to request a larger class of features, it is harmless to define in addition a feature test macro for a subset of those features. For example, if you define _POSIX_C_SOURCE, then defining _POSIX_SOURCE as well has no effect. Likewise, if you define _GNU_SOURCE, then defining either _POSIX_SOURCE or _POSIX_C_SOURCE as well has no effect.
+
+Previous: Using the Library, Up: Introduction   [Contents][Index]
+
+1.4 Roadmap to the Manual
+Here is an overview of the contents of the remaining chapters of this manual.
+
+Error Reporting, describes how errors detected by the library are reported.
+Virtual Memory Allocation And Paging, describes the GNU C Library’s facilities for managing and using virtual and real memory, including dynamic allocation of virtual memory. If you do not know in advance how much memory your program needs, you can allocate it dynamically instead, and manipulate it via pointers.
+Character Handling, contains information about character classification functions (such as isspace) and functions for performing case conversion.
+String and Array Utilities, has descriptions of functions for manipulating strings (null-terminated character arrays) and general byte arrays, including operations such as copying and comparison.
+Character Set Handling, contains information about manipulating characters and strings using character sets larger than will fit in the usual char data type.
+Locales and Internationalization, describes how selecting a particular country or language affects the behavior of the library. For example, the locale affects collation sequences for strings and how monetary values are formatted.
+Searching and Sorting, contains information about functions for searching and sorting arrays. You can use these functions on any kind of array by providing an appropriate comparison function.
+Pattern Matching, presents functions for matching regular expressions and shell file name patterns, and for expanding words as the shell does.
+Input/Output Overview, gives an overall look at the input and output facilities in the library, and contains information about basic concepts such as file names.
+Input/Output on Streams, describes I/O operations involving streams (or FILE * objects). These are the normal C library functions from stdio.h.
+Low-Level Input/Output, contains information about I/O operations on file descriptors. File descriptors are a lower-level mechanism specific to the Unix family of operating systems.
+File System Interface, has descriptions of operations on entire files, such as functions for deleting and renaming them and for creating new directories. This chapter also contains information about how you can access the attributes of a file, such as its owner and file protection modes.
+Pipes and FIFOs, contains information about simple interprocess communication mechanisms. Pipes allow communication between two related processes (such as between a parent and child), while FIFOs allow communication between processes sharing a common file system on the same machine.
+Sockets, describes a more complicated interprocess communication mechanism that allows processes running on different machines to communicate over a network. This chapter also contains information about Internet host addressing and how to use the system network databases.
+Low-Level Terminal Interface, describes how you can change the attributes of a terminal device. If you want to disable echo of characters typed by the user, for example, read this chapter.
+Mathematics, contains information about the math library functions. These include things like random-number generators and remainder functions on integers as well as the usual trigonometric and exponential functions on floating-point numbers.
+Low-Level Arithmetic Functions, describes functions for simple arithmetic, analysis of floating-point values, and reading numbers from strings.
+Date and Time, describes functions for measuring both calendar time and CPU time, as well as functions for setting alarms and timers.
+Non-Local Exits, contains descriptions of the setjmp and longjmp functions. These functions provide a facility for goto-like jumps which can jump from one function to another.
+Signal Handling, tells you all about signals—what they are, how to establish a handler that is called when a particular kind of signal is delivered, and how to prevent signals from arriving during critical sections of your program.
+The Basic Program/System Interface, tells how your programs can access their command-line arguments and environment variables.
+Processes, contains information about how to start new processes and run programs.
+Job Control, describes functions for manipulating process groups and the controlling terminal. This material is probably only of interest if you are writing a shell or other program which handles job control specially.
+System Databases and Name Service Switch, describes the services which are available for looking up names in the system databases, how to determine which service is used for which database, and how these services are implemented so that contributors can design their own services.
+User Database, and Group Database, tell you how to access the system user and group databases.
+System Management, describes functions for controlling and getting information about the hardware and software configuration your program is executing under.
+System Configuration Parameters, tells you how you can get information about various operating system limits. Most of these parameters are provided for compatibility with POSIX.
+C Language Facilities in the Library, contains information about library support for standard parts of the C language, including things like the sizeof operator and the symbolic constant NULL, how to write functions accepting variable numbers of arguments, and constants describing the ranges and other properties of the numerical types. There is also a simple debugging mechanism which allows you to put assertions in your code, and have diagnostic messages printed if the tests fail.
+Summary of Library Facilities, gives a summary of all the functions, variables, and macros in the library, with complete data types and function prototypes, and says what standard or system each is derived from.
+Installing the GNU C Library, explains how to build and install the GNU C Library on your system, and how to report any bugs you might find.
+Library Maintenance, explains how to add new functions or port the library to a new system.
+If you already know the name of the facility you are interested in, you can look it up in Summary of Library Facilities. This gives you a summary of its syntax and a pointer to where you can find a more detailed description. This appendix is particularly useful if you just want to verify the order and type of arguments to a function, for example. It also tells you what standard or system each function, variable, or macro is derived from.
+
+Next: Virtual Memory Allocation And Paging, Previous: Introduction, Up: Main Menu   [Contents][Index]
+
+2 Error Reporting
+Many functions in the GNU C Library detect and report error conditions, and sometimes your programs need to check for these error conditions. For example, when you open an input file, you should verify that the file was actually opened correctly, and print an error message or take other appropriate action if the call to the library function failed.
+
+This chapter describes how the error reporting facility works. Your program should include the header file errno.h to use this facility.
+
+Checking for Errors
+Error Codes
+Error Messages
+Next: Error Codes, Up: Error Reporting   [Contents][Index]
+
+2.1 Checking for Errors
+Most library functions return a special value to indicate that they have failed. The special value is typically -1, a null pointer, or a constant such as EOF that is defined for that purpose. But this return value tells you only that an error has occurred. To find out what kind of error it was, you need to look at the error code stored in the variable errno. This variable is declared in the header file errno.h.
+
+Variable: volatile int errno
+The variable errno contains the system error number. You can change the value of errno.
+
+Since errno is declared volatile, it might be changed asynchronously by a signal handler; see Defining Signal Handlers. However, a properly written signal handler saves and restores the value of errno, so you generally do not need to worry about this possibility except when writing signal handlers.
+
+The initial value of errno at program startup is zero. In many cases, when a library function encounters an error, it will set errno to a non-zero value to indicate what specific error condition occurred. The documentation for each function lists the error conditions that are possible for that function. Not all library functions use this mechanism; some return an error code directly, instead.
+
+Warning: Many library functions may set errno to some meaningless non-zero value even if they did not encounter any errors, and even if they return error codes directly. Therefore, it is usually incorrect to check whether an error occurred by inspecting the value of errno. The proper way to check for error is documented for each function.
+
+Portability Note: ISO C specifies errno as a “modifiable lvalue” rather than as a variable, permitting it to be implemented as a macro. For example, its expansion might involve a function call, like *__errno_location (). In fact, that is what it is on GNU/Linux and GNU/Hurd systems. The GNU C Library, on each system, does whatever is right for the particular system.
+
+There are a few library functions, like sqrt and atan, that return a perfectly legitimate value in case of an error, but also set errno. For these functions, if you want to check to see whether an error occurred, the recommended method is to set errno to zero before calling the function, and then check its value afterward.
+
+All the error codes have symbolic names; they are macros defined in errno.h. The names start with ‘E’ and an upper-case letter or digit; you should consider names of this form to be reserved names. See Reserved Names.
+
+The error code values are all positive integers and are all distinct, with one exception: EWOULDBLOCK and EAGAIN are the same. Since the values are distinct, you can use them as labels in a switch statement; just don’t use both EWOULDBLOCK and EAGAIN. Your program should not make any other assumptions about the specific values of these symbolic constants.
+
+The value of errno doesn’t necessarily have to correspond to any of these macros, since some library functions might return other error codes of their own for other situations. The only values that are guaranteed to be meaningful for a particular library function are the ones that this manual lists for that function.
+
+Except on GNU/Hurd systems, almost any system call can return EFAULT if it is given an invalid pointer as an argument. Since this could only happen as a result of a bug in your program, and since it will not happen on GNU/Hurd systems, we have saved space by not mentioning EFAULT in the descriptions of individual functions.
+
+In some Unix systems, many system calls can also return EFAULT if given as an argument a pointer into the stack, and the kernel for some obscure reason fails in its attempt to extend the stack. If this ever happens, you should probably try using statically or dynamically allocated memory instead of stack memory on that system.
+
+Next: Error Messages, Previous: Checking for Errors, Up: Error Reporting   [Contents][Index]
+
+2.2 Error Codes
+The error code macros are defined in the header file errno.h. All of them expand into integer constant values. Some of these error codes can’t occur on GNU systems, but they can occur using the GNU C Library on other systems.
+
+Macro: int EPERM
+“Operation not permitted.” Only the owner of the file (or other resource) or processes with special privileges can perform the operation.
+
+Macro: int ENOENT
+“No such file or directory.” This is a “file doesn’t exist” error for ordinary files that are referenced in contexts where they are expected to already exist.
+
+Macro: int ESRCH
+“No such process.” No process matches the specified process ID.
+
+Macro: int EINTR
+“Interrupted system call.” An asynchronous signal occurred and prevented completion of the call. When this happens, you should try the call again.
+
+You can choose to have functions resume after a signal that is handled, rather than failing with EINTR; see Primitives Interrupted by Signals.
+
+Macro: int EIO
+“Input/output error.” Usually used for physical read or write errors.
+
+Macro: int ENXIO
+“No such device or address.” The system tried to use the device represented by a file you specified, and it couldn’t find the device. This can mean that the device file was installed incorrectly, or that the physical device is missing or not correctly attached to the computer.
+
+Macro: int E2BIG
+“Argument list too long.” Used when the arguments passed to a new program being executed with one of the exec functions (see Executing a File) occupy too much memory space. This condition never arises on GNU/Hurd systems.
+
+Macro: int ENOEXEC
+“Exec format error.” Invalid executable file format. This condition is detected by the exec functions; see Executing a File.
+
+Macro: int EBADF
+“Bad file descriptor.” For example, I/O on a descriptor that has been closed or reading from a descriptor open only for writing (or vice versa).
+
+Macro: int ECHILD
+“No child processes.” This error happens on operations that are supposed to manipulate child processes, when there aren’t any processes to manipulate.
+
+Macro: int EDEADLK
+“Resource deadlock avoided.” Allocating a system resource would have resulted in a deadlock situation. The system does not guarantee that it will notice all such situations. This error means you got lucky and the system noticed; it might just hang. See File Locks, for an example.
+
+Macro: int ENOMEM
+“Cannot allocate memory.” The system cannot allocate more virtual memory because its capacity is full.
+
+Macro: int EACCES
+“Permission denied.” The file permissions do not allow the attempted operation.
+
+Macro: int EFAULT
+“Bad address.” An invalid pointer was detected. On GNU/Hurd systems, this error never happens; you get a signal instead.
+
+Macro: int ENOTBLK
+“Block device required.” A file that isn’t a block special file was given in a situation that requires one. For example, trying to mount an ordinary file as a file system in Unix gives this error.
+
+Macro: int EBUSY
+“Device or resource busy.” A system resource that can’t be shared is already in use. For example, if you try to delete a file that is the root of a currently mounted filesystem, you get this error.
+
+Macro: int EEXIST
+“File exists.” An existing file was specified in a context where it only makes sense to specify a new file.
+
+Macro: int EXDEV
+“Invalid cross-device link.” An attempt to make an improper link across file systems was detected. This happens not only when you use link (see Hard Links) but also when you rename a file with rename (see Renaming Files).
+
+Macro: int ENODEV
+“No such device.” The wrong type of device was given to a function that expects a particular sort of device.
+
+Macro: int ENOTDIR
+“Not a directory.” A file that isn’t a directory was specified when a directory is required.
+
+Macro: int EISDIR
+“Is a directory.” You cannot open a directory for writing, or create or remove hard links to it.
+
+Macro: int EINVAL
+“Invalid argument.” This is used to indicate various kinds of problems with passing the wrong argument to a library function.
+
+Macro: int EMFILE
+“Too many open files.” The current process has too many files open and can’t open any more. Duplicate descriptors do count toward this limit.
+
+In BSD and GNU, the number of open files is controlled by a resource limit that can usually be increased. If you get this error, you might want to increase the RLIMIT_NOFILE limit or make it unlimited; see Limiting Resource Usage.
+
+Macro: int ENFILE
+“Too many open files in system.” There are too many distinct file openings in the entire system. Note that any number of linked channels count as just one file opening; see Linked Channels. This error never occurs on GNU/Hurd systems.
+
+Macro: int ENOTTY
+“Inappropriate ioctl for device.” Inappropriate I/O control operation, such as trying to set terminal modes on an ordinary file.
+
+Macro: int ETXTBSY
+“Text file busy.” An attempt to execute a file that is currently open for writing, or write to a file that is currently being executed. Often using a debugger to run a program is considered having it open for writing and will cause this error. (The name stands for “text file busy”.) This is not an error on GNU/Hurd systems; the text is copied as necessary.
+
+Macro: int EFBIG
+“File too large.” The size of a file would be larger than allowed by the system.
+
+Macro: int ENOSPC
+“No space left on device.” Write operation on a file failed because the disk is full.
+
+Macro: int ESPIPE
+“Illegal seek.” Invalid seek operation (such as on a pipe).
+
+Macro: int EROFS
+“Read-only file system.” An attempt was made to modify something on a read-only file system.
+
+Macro: int EMLINK
+“Too many links.” The link count of a single file would become too large. rename can cause this error if the file being renamed already has as many links as it can take (see Renaming Files).
+
+Macro: int EPIPE
+“Broken pipe.” There is no process reading from the other end of a pipe. Every library function that returns this error code also generates a SIGPIPE signal; this signal terminates the program if not handled or blocked. Thus, your program will never actually see EPIPE unless it has handled or blocked SIGPIPE.
+
+Macro: int EDOM
+“Numerical argument out of domain.” Used by mathematical functions when an argument value does not fall into the domain over which the function is defined.
+
+Macro: int ERANGE
+“Numerical result out of range.” Used by mathematical functions when the result value is not representable because of overflow or underflow.
+
+Macro: int EAGAIN
+“Resource temporarily unavailable.” The call might work if you try again later. The macro EWOULDBLOCK is another name for EAGAIN; they are always the same in the GNU C Library.
+
+This error can happen in a few different situations:
+
+An operation that would block was attempted on an object that has non-blocking mode selected. Trying the same operation again will block until some external condition makes it possible to read, write, or connect (whatever the operation). You can use select to find out when the operation will be possible; see Waiting for Input or Output.
+Portability Note: In many older Unix systems, this condition was indicated by EWOULDBLOCK, which was a distinct error code different from EAGAIN. To make your program portable, you should check for both codes and treat them the same.
+
+A temporary resource shortage made an operation impossible. fork can return this error. It indicates that the shortage is expected to pass, so your program can try the call again later and it may succeed. It is probably a good idea to delay for a few seconds before trying it again, to allow time for other processes to release scarce resources. Such shortages are usually fairly serious and affect the whole system, so usually an interactive program should report the error to the user and return to its command loop.
+Macro: int EWOULDBLOCK
+“Operation would block.” In the GNU C Library, this is another name for EAGAIN (above). The values are always the same, on every operating system.
+
+C libraries in many older Unix systems have EWOULDBLOCK as a separate error code.
+
+Macro: int EINPROGRESS
+“Operation now in progress.” An operation that cannot complete immediately was initiated on an object that has non-blocking mode selected. Some functions that must always block (such as connect; see Making a Connection) never return EAGAIN. Instead, they return EINPROGRESS to indicate that the operation has begun and will take some time. Attempts to manipulate the object before the call completes return EALREADY. You can use the select function to find out when the pending operation has completed; see Waiting for Input or Output.
+
+Macro: int EALREADY
+“Operation already in progress.” An operation is already in progress on an object that has non-blocking mode selected.
+
+Macro: int ENOTSOCK
+“Socket operation on non-socket.” A file that isn’t a socket was specified when a socket is required.
+
+Macro: int EMSGSIZE
+“Message too long.” The size of a message sent on a socket was larger than the supported maximum size.
+
+Macro: int EPROTOTYPE
+“Protocol wrong type for socket.” The socket type does not support the requested communications protocol.
+
+Macro: int ENOPROTOOPT
+“Protocol not available.” You specified a socket option that doesn’t make sense for the particular protocol being used by the socket. See Socket Options.
+
+Macro: int EPROTONOSUPPORT
+“Protocol not supported.” The socket domain does not support the requested communications protocol (perhaps because the requested protocol is completely invalid). See Creating a Socket.
+
+Macro: int ESOCKTNOSUPPORT
+“Socket type not supported.” The socket type is not supported.
+
+Macro: int EOPNOTSUPP
+“Function: double erand48 (unsigned short int xsubi[3])
+Preliminary: | MT-Unsafe race:drand48 | AS-Unsafe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+This function returns a double value in the range of 0.0 to 1.0 (exclusive), similarly to drand48. The argument is an array describing the state of the random number generator.
+
+This function can be called subsequently since it updates the array to guarantee random numbers. The array should have been initialized before initial use to obtain reproducible results.
+
+Function: long int lrand48 (void)
+Preliminary: | MT-Unsafe race:drand48 | AS-Unsafe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The lrand48 function returns an integer value in the range of 0 to 2^31 (exclusive). Even if the size of the long int type can take more than 32 bits, no higher numbers are returned. The random bits are determined by the global state of the random number generator in the C library.
+
+Function: long int nrand48 (unsigned short int xsubi[3])
+Preliminary: | MT-Unsafe race:drand48 | AS-Unsafe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+This function is similar to the lrand48 function in that it returns a number in the range of 0 to 2^31 (exclusive) but the state of the random number generator used to produce the random bits is determined by the array provided as the parameter to the function.
+
+The numbers in the array are updated afterwards so that subsequent calls to this function yield different results (as is expected of a random number generator). The array should have been initialized before the first call to obtain reproducible results.
+
+Function: long int mrand48 (void)
+Preliminary: | MT-Unsafe race:drand48 | AS-Unsafe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The mrand48 function is similar to lrand48. The only difference is that the numbers returned are in the range -2^31 to 2^31 (exclusive).
+
+Function: long int jrand48 (unsigned short int xsubi[3])
+Preliminary: | MT-Unsafe race:drand48 | AS-Unsafe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The jrand48 function is similar to nrand48. The only difference is that the numbers returned are in the range -2^31 to 2^31 (exclusive). For the xsubi parameter the same requirements are necessary.
+
+The internal state of the random number generator can be initialized in several ways. The methods differ in the completeness of the information provided.
+
+Function: void srand48 (long int seedval)
+Preliminary: | MT-Unsafe race:drand48 | AS-Unsafe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The srand48 function sets the most significant 32 bits of the internal state of the random number generator to the least significant 32 bits of the seedval parameter. The lower 16 bits are initialized to the value 0x330E. Even if the long int type contains more than 32 bits only the lower 32 bits are used.
+
+Owing to this limitation, initialization of the state of this function is not very useful. But it makes it easy to use a construct like srand48 (time (0)).
+
+A side-effect of this function is that the values a and c from the internal state, which are used in the congruential formula, are reset to the default values given above. This is of importance once the user has called the lcong48 function (see below).
+
+Function: unsigned short int * seed48 (unsigned short int seed16v[3])
+Preliminary: | MT-Unsafe race:drand48 | AS-Unsafe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The seed48 function initializes all 48 bits of the state of the internal random number generator from the contents of the parameter seed16v. Here the lower 16 bits of the first element of seed16v initialize the least significant 16 bits of the internal state, the lower 16 bits of seed16v[1] initialize the mid-order 16 bits of the state and the 16 lower bits of seed16v[2] initialize the most significant 16 bits of the state.
+
+Unlike srand48 this function lets the user initialize all 48 bits of the state.
+
+The value returned by seed48 is a pointer to an array containing the values of the internal state before the change. This might be useful to restart the random number generator at a certain state. Otherwise the value can simply be ignored.
+
+As for srand48, the values a and c from the congruential formula are reset to the default values.
+
+There is one more function to initialize the random number generator which enables you to specify even more information by allowing you to change the parameters in the congruential formula.
+
+Function: void lcong48 (unsigned short int param[7])
+Preliminary: | MT-Unsafe race:drand48 | AS-Unsafe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The lcong48 function allows the user to change the complete state of the random number generator. Unlike srand48 and seed48, this function also changes the constants in the congruential formula.
+
+From the seven elements in the array param the least significant 16 bits of the entries param[0] to param[2] determine the initial state, the least significant 16 bits of param[3] to param[5] determine the 48 bit constant a and param[6] determines the 16-bit value c.
+
+All the above functions have in common that they use the global parameters for the congruential formula. In multi-threaded programs it might sometimes be useful to have different parameters in different threads. For this reason all the above functions have a counterpart which works on a description of the random number generator in the user-supplied buffer instead of the global state.
+
+Please note that it is no problem if several threads use the global state if all threads use the functions which take a pointer to an array containing the state. The random numbers are computed following the same loop but if the state in the array is different all threads will obtain an individual random number generator.
+
+The user-supplied buffer must be of type struct drand48_data. This type should be regarded as opaque and not manipulated directly.
+
+Function: int drand48_r (struct drand48_data *buffer, double *result)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+This function is equivalent to the drand48 function with the difference that it does not modify the global random number generator parameters but instead the parameters in the buffer supplied through the pointer buffer. The random number is returned in the variable pointed to by result.
+
+The return value of the function indicates whether the call succeeded. If the value is less than 0 an error occurred and errno is set to indicate the problem.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Function: int erand48_r (unsigned short int xsubi[3], struct drand48_data *buffer, double *result)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The erand48_r function works like erand48, but in addition it takes an argument buffer which describes the random number generator. The state of the random number generator is taken from the xsubi array, the parameters for the congruential formula from the global random number generator data. The random number is returned in the variable pointed to by result.
+
+The return value is non-negative if the call succeeded.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Function: int lrand48_r (struct drand48_data *buffer, long int *result)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+This function is similar to lrand48, but in addition it takes a pointer to a buffer describing the state of the random number generator just like drand48.
+
+If the return value of the function is non-negative the variable pointed to by result contains the result. Otherwise an error occurred.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Function: int nrand48_r (unsigned short int xsubi[3], struct drand48_data *buffer, long int *result)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The nrand48_r function works like nrand48 in that it produces a random number in the range 0 to 2^31. But instead of using the global parameters for the congruential formula it uses the information from the buffer pointed to by buffer. The state is described by the values in xsubi.
+
+If the return value is non-negative the variable pointed to by result contains the result.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Function: int mrand48_r (struct drand48_data *buffer, long int *result)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+This function is similar to mrand48 but like the other reentrant functions it uses the random number generator described by the value in the buffer pointed to by buffer.
+
+If the return value is non-negative the variable pointed to by result contains the result.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Function: int jrand48_r (unsigned short int xsubi[3], struct drand48_data *buffer, long int *result)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The jrand48_r function is similar to jrand48. Like the other reentrant functions of this function family it uses the congruential formula parameters from the buffer pointed to by buffer.
+
+If the return value is non-negative the variable pointed to by result contains the result.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Before any of the above functions are used the buffer of type struct drand48_data should be initialized. The easiest way to do this is to fill the whole buffer with null bytes, e.g. by
+
+memset (buffer, '\0', sizeof (struct drand48_data));
+Using any of the reentrant functions of this family now will automatically initialize the random number generator to the default values for the state and the parameters of the congruential formula.
+
+The other possibility is to use any of the functions which explicitly initialize the buffer. Though it might be obvious how to initialize the buffer from looking at the parameter to the function, it is highly recommended to use these functions since the result might not always be what you expect.
+
+Function: int srand48_r (long int seedval, struct drand48_data *buffer)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The description of the random number generator represented by the information in buffer is initialized similarly to what the function srand48 does. The state is initialized from the parameter seedval and the parameters for the congruential formula are initialized to their default values.
+
+If the return value is non-negative the function call succeeded.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Function: int seed48_r (unsigned short int seed16v[3], struct drand48_data *buffer)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+This function is similar to srand48_r but like seed48 it initializes all 48 bits of the state from the parameter seed16v.
+
+If the return value is non-negative the function call succeeded. It does not return a pointer to the previous state of the random number generator like the seed48 function does. If the user wants to preserve the state for a later re-run s/he can copy the whole buffer pointed to by buffer.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Function: int lcong48_r (unsigned short int param[7], struct drand48_data *buffer)
+Preliminary: | MT-Safe race:buffer | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+This function initializes all aspects of the random number generator described in buffer with the data in param. Here it is especially true that the function does more than just copying the contents of param and buffer. More work is required and therefore it is important to use this function rather than initializing the random number generator directly.
+
+If the return value is non-negative the function call succeeded.
+
+This function is a GNU extension and should not be used in portable programs.
+
+Previous: SVID Random Number Function, Up: Pseudo-Random Numbers   [Contents][Index]
+
+19.8.4 High Quality Random Number Functions
+This section describes the random number functions provided as a GNU extension, based on OpenBSD interfaces.
+
+The GNU C Library uses kernel entropy obtained either through getrandom or by reading /dev/urandom to seed.
+
+These functions provide higher random quality than ISO, BSD, and SVID functions, and may be used in cryptographic contexts.
+
+The prototypes for these functions are in stdlib.h.
+
+Function: uint32_t arc4random (void)
+| MT-Safe | AS-Unsafe corrupt | AC-Safe | See POSIX Safety Concepts.
+
+This function returns a single 32-bit value in the range of 0 to 2^32−1 (inclusive), which is twice the range of rand and random.
+
+Function: void arc4random_buf (void *buffer, size_t length)
+| MT-Safe | AS-Unsafe corrupt | AC-Safe | See POSIX Safety Concepts.
+
+This function fills the region buffer of length length bytes with random data.
+
+Function: uint32_t arc4random_uniform (uint32_t upper_bound)
+| MT-Safe | AS-Unsafe corrupt | AC-Safe | See POSIX Safety Concepts.
+
+This function returns a single 32-bit value, uniformly distributed but less than the upper_bound. It avoids the modulo bias when the upper bound is not a power of two.
+
+Previous: Pseudo-Random Numbers, Up: Mathematics   [Contents][Index]
+
+19.9 Is Fast Code or Small Code preferred?
+If an application uses many floating point functions it is often the case that the cost of the function calls themselves is not negligible. Modern processors can often execute the operations themselves very fast, but the function call disrupts the instruction pipeline.
+
+For this reason the GNU C Library provides optimizations for many of the frequently-used math functions. When GNU CC is used and the user activates the optimizer, several new inline functions and macros are defined. These new functions and macros have the same names as the library functions and so are used instead of the latter. In the case of inline functions the compiler will decide whether it is reasonable to use them, and this decision is usually correct.
+
+This means that no calls to the library functions may be necessary, and can increase the speed of generated code significantly. The drawback is that code size will increase, and the increase is not always negligible.
+
+There are two kinds of inline functions: those that give the same result as the library functions and others that might not set errno and might have a reduced precision and/or argument range in comparison with the library functions. The latter inline functions are only available if the flag -ffast-math is given to GNU CC.
+
+Not all hardware implements the entire IEEE 754 standard, and even if it does there may be a substantial performance penalty for using some of its features. For example, enabling traps on some processors forces the FPU to run un-pipelined, which can more than double calculation time.
+
+Next: Date and Time, Previous: Mathematics, Up: Main Menu   [Contents][Index]
+
+20 Arithmetic Functions
+This chapter contains information about functions for doing basic arithmetic operations, such as splitting a float into its integer and fractional parts or retrieving the imaginary part of a complex value. These functions are declared in the header files math.h and complex.h.
+
+Integers
+Integer Division
+Floating Point Numbers
+Floating-Point Number Classification Functions
+Errors in Floating-Point Calculations
+Rounding Modes
+Floating-Point Control Functions
+Arithmetic Functions
+Complex Numbers
+Projections, Conjugates, and Decomposing of Complex Numbers
+Parsing of Numbers
+Printing of Floats
+Old-fashioned System V number-to-string functions
+Next: Integer Division, Up: Arithmetic Functions   [Contents][Index]
+
+20.1 Integers
+The C language defines several integer data types: integer, short integer, long integer, and character, all in both signed and unsigned varieties. The GNU C compiler extends the language to contain long long integers as well.
+
+The C integer types were intended to allow code to be portable among machines with different inherent data sizes (word sizes), so each type may have different ranges on different machines. The problem with this is that a program often needs to be written for a particular range of integers, and sometimes must be written for a particular size of storage, regardless of what machine the program runs on.
+
+To address this problem, the GNU C Library contains C type definitions you can use to declare integers that meet your exact needs. Because the GNU C Library header files are customized to a specific machine, your program source code doesn’t have to be.
+
+These typedefs are in stdint.h.
+
+If you require that an integer be represented in exactly N bits, use one of the following types, with the obvious mapping to bit size and signedness:
+
+int8_t
+int16_t
+int32_t
+int64_t
+uint8_t
+uint16_t
+uint32_t
+uint64_t
+If your C compiler and target machine do not allow integers of a certain size, the corresponding above type does not exist.
+
+If you don’t need a specific storage size, but want the smallest data structure with at least N bits, use one of these:
+
+int_least8_t
+int_least16_t
+int_least32_t
+int_least64_t
+uint_least8_t
+uint_least16_t
+uint_least32_t
+uint_least64_t
+If you don’t need a specific storage size, but want the data structure that allows the fastest access while having at least N bits (and among data structures with the same access speed, the smallest one), use one of these:
+
+int_fast8_t
+int_fast16_t
+int_fast32_t
+int_fast64_t
+uint_fast8_t
+uint_fast16_t
+uint_fast32_t
+uint_fast64_t
+If you want an integer with the widest range possible on the platform on which it is being used, use one of the following. If you use these, you should write code that takes into account the variable size and range of the integer.
+
+intmax_t
+uintmax_t
+The GNU C Library also provides macros that tell you the maximum and minimum possible values for each integer data type. The macro names follow these examples: INT32_MAX, UINT8_MAX, INT_FAST32_MIN, INT_LEAST64_MIN, UINTMAX_MAX, INTMAX_MAX, INTMAX_MIN. Note that there are no macros for unsigned integer minima. These are always zero. Similarly, there are macros such as INTMAX_WIDTH for the width of these types. Those macros for integer type widths come from TS 18661-1:2014.
+
+There are similar macros for use with C’s built in integer types which should come with your C compiler. These are described in Data Type Measurements.
+
+Don’t forget you can use the C sizeof function with any of these data types to get the number of bytes of storage each uses.
+
+Next: Floating Point Numbers, Previous: Integers, Up: Arithmetic Functions   [Contents][Index]
+
+20.2 Integer Division
+This section describes functions for performing integer division. These functions are redundant when GNU CC is used, because in GNU C the ‘/’ operator always rounds towards zero. But in other C implementations, ‘/’ may round differently with negative arguments. div and ldiv are useful because they specify how to round the quotient: towards zero. The remainder has the same sign as the numerator.
+
+These functions are specified to return a result r such that the value r.quot*denominator + r.rem equals numerator.
+
+To use these facilities, you should include the header file stdlib.h in your program.
+
+Data Type: div_t
+This is a structure type used to hold the result returned by the div function. It has the following members:
+
+int quot
+The quotient from the division.
+
+int rem
+The remainder from the division.
+
+Function: div_t div (int numerator, int denominator)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The function div computes the quotient and remainder from the division of numerator by denominator, returning the result in a structure of type div_t.
+
+If the result cannot be represented (as in a division by zero), the behavior is undefined.
+
+Here is an example, albeit not a very useful one.
+
+div_t result;
+result = div (20, -6);
+Now result.quot is -3 and result.rem is 2.
+
+Data Type: ldiv_t
+This is a structure type used to hold the result returned by the ldiv function. It has the following members:
+
+long int quot
+The quotient from the division.
+
+long int rem
+The remainder from the division.
+
+(This is identical to div_t except that the components are of type long int rather than int.)
+
+Function: ldiv_t ldiv (long int numerator, long int denominator)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The ldiv function is similar to div, except that the arguments are of type long int and the result is returned as a structure of type ldiv_t.
+
+Data Type: lldiv_t
+This is a structure type used to hold the result returned by the lldiv function. It has the following members:
+
+long long int quot
+The quotient from the division.
+
+long long int rem
+The remainder from the division.
+
+(This is identical to div_t except that the components are of type long long int rather than int.)
+
+Function: lldiv_t lldiv (long long int numerator, long long int denominator)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The lldiv function is like the div function, but the arguments are of type long long int and the result is returned as a structure of type lldiv_t.
+
+The lldiv function was added in ISO C99.
+
+Data Type: imaxdiv_t
+This is a structure type used to hold the result returned by the imaxdiv function. It has the following members:
+
+intmax_t quot
+The quotient from the division.
+
+intmax_t rem
+The remainder from the division.
+
+(This is identical to div_t except that the components are of type intmax_t rather than int.)
+
+See Integers for a description of the intmax_t type.
+
+Function: imaxdiv_t imaxdiv (intmax_t numerator, intmax_t denominator)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The imaxdiv function is like the div function, but the arguments are of type intmax_t and the result is returned as a structure of type imaxdiv_t.
+
+See Integers for a description of the intmax_t type.
+
+The imaxdiv function was added in ISO C99.
+
+Next: Floating-Point Number Classification Functions, Previous: Integer Division, Up: Arithmetic Functions   [Contents][Index]
+
+20.3 Floating Point Numbers
+Most computer hardware has support for two different kinds of numbers: integers (…-3, -2, -1, 0, 1, 2, 3…) and floating-point numbers. Floating-point numbers have three parts: the mantissa, the exponent, and the sign bit. The real number represented by a floating-point value is given by (s ? -1 : 1) · 2^e · M where s is the sign bit, e the exponent, and M the mantissa. See Floating Point Representation Concepts, for details. (It is possible to have a different base for the exponent, but all modern hardware uses 2.)
+
+Floating-point numbers can represent a finite subset of the real numbers. While this subset is large enough for most purposes, it is important to remember that the only reals that can be represented exactly are rational numbers that have a terminating binary expansion shorter than the width of the mantissa. Even simple fractions such as 1/5 can only be approximated by floating point.
+
+Mathematical operations and functions frequently need to produce values that are not representable. Often these values can be approximated closely enough for practical purposes, but sometimes they can’t. Historically there was no way to tell when the results of a calculation were inaccurate. Modern computers implement the IEEE 754 standard for numerical computations, which defines a framework for indicating to the program when the results of calculation are not trustworthy. This framework consists of a set of exceptions that indicate why a result could not be represented, and the special values infinity and not a number (NaN).
+
+Next: Errors in Floating-Point Calculations, Previous: Floating Point Numbers, Up: Arithmetic Functions   [Contents][Index]
+
+20.4 Floating-Point Number Classification Functions
+ISO C99 defines macros that let you determine what sort of floating-point number a variable holds.
+
+Macro: int fpclassify (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This is a generic macro which works on all floating-point types and which returns a value of type int. The possible values are:
+
+FP_NAN
+The floating-point number x is “Not a Number” (see Infinity and NaN)
+
+FP_INFINITE
+The value of x is either plus or minus infinity (see Infinity and NaN)
+
+FP_ZERO
+The value of x is zero. In floating-point formats like IEEE 754, where zero can be signed, this value is also returned if x is negative zero.
+
+FP_SUBNORMAL
+Numbers whose absolute value is too small to be represented in the normal format are represented in an alternate, denormalized format (see Floating Point Representation Concepts). This format is less precise but can represent values closer to zero. fpclassify returns this value for values of x in this alternate format.
+
+FP_NORMAL
+This value is returned for all other values of x. It indicates that there is nothing special about the number.
+
+fpclassify is most useful if more than one property of a number must be tested. There are more specific macros which only test one property at a time. Generally these macros execute faster than fpclassify, since there is special hardware support for them. You should therefore use the specific macros whenever possible.
+
+Macro: int iscanonical (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+In some floating-point formats, some values have canonical (preferred) and noncanonical encodings (for IEEE interchange binary formats, all encodings are canonical). This macro returns a nonzero value if x has a canonical encoding. It is from TS 18661-1:2014.
+
+Note that some formats have multiple encodings of a value which are all equally canonical; iscanonical returns a nonzero value for all such encodings. Also, formats may have encodings that do not correspond to any valid value of the type. In ISO C terms these are trap representations; in the GNU C Library, iscanonical returns zero for such encodings.
+
+Macro: int isfinite (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro returns a nonzero value if x is finite: not plus or minus infinity, and not NaN. It is equivalent to
+
+(fpclassify (x) != FP_NAN && fpclassify (x) != FP_INFINITE)
+isfinite is implemented as a macro which accepts any floating-point type.
+
+Macro: int isnormal (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro returns a nonzero value if x is finite and normalized. It is equivalent to
+
+(fpclassify (x) == FP_NORMAL)
+Macro: int isnan (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro returns a nonzero value if x is NaN. It is equivalent to
+
+(fpclassify (x) == FP_NAN)
+Macro: int issignaling (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro returns a nonzero value if x is a signaling NaN (sNaN). It is from TS 18661-1:2014.
+
+Macro: int issubnormal (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro returns a nonzero value if x is subnormal. It is from TS 18661-1:2014.
+
+Macro: int iszero (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro returns a nonzero value if x is zero. It is from TS 18661-1:2014.
+
+Another set of floating-point classification functions was provided by BSD. The GNU C Library also supports these functions; however, we recommend that you use the ISO C99 macros in new code. Those are standard and will be available more widely. Also, since they are macros, you do not have to worry about the type of their argument.
+
+Function: int isinf (double x)
+Function: int isinff (float x)
+Function: int isinfl (long double x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns -1 if x represents negative infinity, 1 if x represents positive infinity, and 0 otherwise.
+
+Function: int isnan (double x)
+Function: int isnanf (float x)
+Function: int isnanl (long double x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns a nonzero value if x is a “not a number” value, and zero otherwise.
+
+NB: The isnan macro defined by ISO C99 overrides the BSD function. This is normally not a problem, because the two routines behave identically. However, if you really need to get the BSD function for some reason, you can write
+
+(isnan) (x)
+Function: int finite (double x)
+Function: int finitef (float x)
+Function: int finitel (long double x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns a nonzero value if x is neither infinite nor a “not a number” value, and zero otherwise.
+
+Portability Note: The functions listed in this section are BSD extensions.
+
+Next: Rounding Modes, Previous: Floating-Point Number Classification Functions, Up: Arithmetic Functions   [Contents][Index]
+
+20.5 Errors in Floating-Point Calculations
+FP Exceptions
+Infinity and NaN
+Examining the FPU status word
+Error Reporting by Mathematical Functions
+Next: Infinity and NaN, Up: Errors in Floating-Point Calculations   [Contents][Index]
+
+20.5.1 FP Exceptions
+The IEEE 754 standard defines five exceptions that can occur during a calculation. Each corresponds to a particular sort of error, such as overflow.
+
+When exceptions occur (when exceptions are raised, in the language of the standard), one of two things can happen. By default the exception is simply noted in the floating-point status word, and the program continues as if nothing had happened. The operation produces a default value, which depends on the exception (see the table below). Your program can check the status word to find out which exceptions happened.
+
+Alternatively, you can enable traps for exceptions. In that case, when an exception is raised, your program will receive the SIGFPE signal. The default action for this signal is to terminate the program. See Signal Handling, for how you can change the effect of the signal.
+
+The exceptions defined in IEEE 754 are:
+
+‘Invalid Operation’
+This exception is raised if the given operands are invalid for the operation to be performed. Examples are (see IEEE 754, section 7):
+
+Addition or subtraction: ∞ - ∞. (But ∞ + ∞ = ∞).
+Multiplication: 0 · ∞.
+Division: 0/0 or ∞/∞.
+Remainder: x REM y, where y is zero or x is infinite.
+Square root if the operand is less than zero. More generally, any mathematical function evaluated outside its domain produces this exception.
+Conversion of a floating-point number to an integer or decimal string, when the number cannot be represented in the target format (due to overflow, infinity, or NaN).
+Conversion of an unrecognizable input string.
+Comparison via predicates involving < or >, when one or other of the operands is NaN. You can prevent this exception by using the unordered comparison functions instead; see Floating-Point Comparison Functions.
+If the exception does not trap, the result of the operation is NaN.
+
+‘Division by Zero’
+This exception is raised when a finite nonzero number is divided by zero. If no trap occurs the result is either +∞ or -∞, depending on the signs of the operands.
+
+‘Overflow’
+This exception is raised whenever the result cannot be represented as a finite value in the precision format of the destination. If no trap occurs the result depends on the sign of the intermediate result and the current rounding mode (IEEE 754, section 7.3):
+
+Round to nearest carries all overflows to ∞ with the sign of the intermediate result.
+Round toward 0 carries all overflows to the largest representable finite number with the sign of the intermediate result.
+Round toward -∞ carries positive overflows to the largest representable finite number and negative overflows to -∞.
+Round toward ∞ carries negative overflows to the most negative representable finite number and positive overflows to ∞.
+Whenever the overflow exception is raised, the inexact exception is also raised.
+
+‘Underflow’
+The underflow exception is raised when an intermediate result is too small to be calculated accurately, or if the operation’s result rounded to the destination precision is too small to be normalized.
+
+When no trap is installed for the underflow exception, underflow is signaled (via the underflow flag) only when both tininess and loss of accuracy have been detected. If no trap handler is installed the operation continues with an imprecise small value, or zero if the destination precision cannot hold the small exact result.
+
+‘Inexact’
+This exception is signalled if a rounded result is not exact (such as when calculating the square root of two) or a result overflows without an overflow trap.
+
+Next: Examining the FPU status word, Previous: FP Exceptions, Up: Errors in Floating-Point Calculations   [Contents][Index]
+
+20.5.2 Infinity and NaN
+IEEE 754 floating point numbers can represent positive or negative infinity, and NaN (not a number). These three values arise from calculations whose result is undefined or cannot be represented accurately. You can also deliberately set a floating-point variable to any of them, which is sometimes useful. Some examples of calculations that produce infinity or NaN:
+
+1/0 = ∞
+log (0) = -∞
+sqrt (-1) = NaN
+When a calculation produces any of these values, an exception also occurs; see FP Exceptions.
+
+The basic operations and math functions all accept infinity and NaN and produce sensible output. Infinities propagate through calculations as one would expect: for example, 2 + ∞ = ∞, 4/∞ = 0, atan (∞) = π/2. NaN, on the other hand, infects any calculation that involves it. Unless the calculation would produce the same result no matter what real value replaced NaN, the result is NaN.
+
+In comparison operations, positive infinity is larger than all values except itself and NaN, and negative infinity is smaller than all values except itself and NaN. NaN is unordered: it is not equal to, greater than, or less than anything, including itself. x == x is false if the value of x is NaN. You can use this to test whether a value is NaN or not, but the recommended way to test for NaN is with the isnan function (see Floating-Point Number Classification Functions). In addition, <, >, <=, and >= will raise an exception when applied to NaNs.
+
+math.h defines macros that allow you to explicitly set a variable to infinity or NaN.
+
+Macro: float INFINITY
+An expression representing positive infinity. It is equal to the value produced by mathematical operations like 1.0 / 0.0. -INFINITY represents negative infinity.
+
+You can test whether a floating-point value is infinite by comparing it to this macro. However, this is not recommended; you should use the isfinite macro instead. See Floating-Point Number Classification Functions.
+
+This macro was introduced in the ISO C99 standard.
+
+Macro: float NAN
+An expression representing a value which is “not a number”. This macro is a GNU extension, available only on machines that support the “not a number” value—that is to say, on all machines that support IEEE floating point.
+
+You can use ‘#ifdef NAN’ to test whether the machine supports NaN. (Of course, you must arrange for GNU extensions to be visible, such as by defining _GNU_SOURCE, and then you must include math.h.)
+
+Macro: float SNANF
+Macro: double SNAN
+Macro: long double SNANL
+Macro: _FloatN SNANFN
+Macro: _FloatNx SNANFNx
+These macros, defined by TS 18661-1:2014 and TS 18661-3:2015, are constant expressions for signaling NaNs.
+
+Macro: int FE_SNANS_ALWAYS_SIGNAL
+This macro, defined by TS 18661-1:2014, is defined to 1 in fenv.h to indicate that functions and operations with signaling NaN inputs and floating-point results always raise the invalid exception and return a quiet NaN, even in cases (such as fmax, hypot and pow) where a quiet NaN input can produce a non-NaN result. Because some compiler optimizations may not handle signaling NaNs correctly, this macro is only defined if compiler support for signaling NaNs is enabled. That support can be enabled with the GCC option -fsignaling-nans.
+
+IEEE 754 also allows for another unusual value: negative zero. This value is produced when you divide a positive number by negative infinity, or when a negative result is smaller than the limits of representation.
+
+Next: Error Reporting by Mathematical Functions, Previous: Infinity and NaN, Up: Errors in Floating-Point Calculations   [Contents][Index]
+
+20.5.3 Examining the FPU status word
+ISO C99 defines functions to query and manipulate the floating-point status word. You can use these functions to check for untrapped exceptions when it’s convenient, rather than worrying about them in the middle of a calculation.
+
+These constants represent the various IEEE 754 exceptions. Not all FPUs report all the different exceptions. Each constant is defined if and only if the FPU you are compiling for supports that exception, so you can test for FPU support with ‘#ifdef’. They are defined in fenv.h.
+
+FE_INEXACT
+The inexact exception.
+
+FE_DIVBYZERO
+The divide by zero exception.
+
+FE_UNDERFLOW
+The underflow exception.
+
+FE_OVERFLOW
+The overflow exception.
+
+FE_INVALID
+The invalid exception.
+
+The macro FE_ALL_EXCEPT is the bitwise OR of all exception macros which are supported by the FP implementation.
+
+These functions allow you to clear exception flags, test for exceptions, and save and restore the set of exceptions flagged.
+
+Function: int feclearexcept (int excepts)
+Preliminary: | MT-Safe | AS-Safe !posix | AC-Safe !posix | See POSIX Safety Concepts.
+
+This function clears all of the supported exception flags indicated by excepts.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+Function: int feraiseexcept (int excepts)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function raises the supported exceptions indicated by excepts. If more than one exception bit in excepts is set the order in which the exceptions are raised is undefined except that overflow (FE_OVERFLOW) or underflow (FE_UNDERFLOW) are raised before inexact (FE_INEXACT). Whether for overflow or underflow the inexact exception is also raised is also implementation dependent.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+Function: int fesetexcept (int excepts)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function sets the supported exception flags indicated by excepts, like feraiseexcept, but without causing enabled traps to be taken. fesetexcept is from TS 18661-1:2014.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+Function: int fetestexcept (int excepts)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Test whether the exception flags indicated by the parameter except are currently set. If any of them are, a nonzero value is returned which specifies which exceptions are set. Otherwise the result is zero.
+
+To understand these functions, imagine that the status word is an integer variable named status. feclearexcept is then equivalent to ‘status &= ~excepts’ and fetestexcept is equivalent to ‘(status & excepts)’. The actual implementation may be very different, of course.
+
+Exception flags are only cleared when the program explicitly requests it, by calling feclearexcept. If you want to check for exceptions from a set of calculations, you should clear all the flags first. Here is a simple example of the way to use fetestexcept:
+
+{
+  double f;
+  int raised;
+  feclearexcept (FE_ALL_EXCEPT);
+  f = compute ();
+  raised = fetestexcept (FE_OVERFLOW | FE_INVALID);
+  if (raised & FE_OVERFLOW) { /* … */ }
+  if (raised & FE_INVALID) { /* … */ }
+  /* … */
+}
+You cannot explicitly set bits in the status word. You can, however, save the entire status word and restore it later. This is done with the following functions:
+
+Function: int fegetexceptflag (fexcept_t *flagp, int excepts)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function stores in the variable pointed to by flagp an implementation-defined value representing the current setting of the exception flags indicated by excepts.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+Function: int fesetexceptflag (const fexcept_t *flagp, int excepts)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function restores the flags for the exceptions indicated by excepts to the values stored in the variable pointed to by flagp.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+Note that the value stored in fexcept_t bears no resemblance to the bit mask returned by fetestexcept. The type may not even be an integer. Do not attempt to modify an fexcept_t variable.
+
+Function: int fetestexceptflag (const fexcept_t *flagp, int excepts)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Test whether the exception flags indicated by the parameter excepts are set in the variable pointed to by flagp. If any of them are, a nonzero value is returned which specifies which exceptions are set. Otherwise the result is zero. fetestexceptflag is from TS 18661-1:2014.
+
+Previous: Examining the FPU status word, Up: Errors in Floating-Point Calculations   [Contents][Index]
+
+20.5.4 Error Reporting by Mathematical Functions
+Many of the math functions are defined only over a subset of the real or complex numbers. Even if they are mathematically defined, their result may be larger or smaller than the range representable by their return type without loss of accuracy. These are known as domain errors, overflows, and underflows, respectively. Math functions do several things when one of these errors occurs. In this manual we will refer to the complete response as signalling a domain error, overflow, or underflow.
+
+When a math function suffers a domain error, it raises the invalid exception and returns NaN. It also sets errno to EDOM; this is for compatibility with old systems that do not support IEEE 754 exception handling. Likewise, when overflow occurs, math functions raise the overflow exception and, in the default rounding mode, return ∞ or -∞ as appropriate (in other rounding modes, the largest finite value of the appropriate sign is returned when appropriate for that rounding mode). They also set errno to ERANGE if returning ∞ or -∞; errno may or may not be set to ERANGE when a finite value is returned on overflow. When underflow occurs, the underflow exception is raised, and zero (appropriately signed) or a subnormal value, as appropriate for the mathematical result of the function and the rounding mode, is returned. errno may be set to ERANGE, but this is not guaranteed; it is intended that the GNU C Library should set it when the underflow is to an appropriately signed zero, but not necessarily for other underflows.
+
+When a math function has an argument that is a signaling NaN, the GNU C Library does not consider this a domain error, so errno is unchanged, but the invalid exception is still raised (except for a few functions that are specified to handle signaling NaNs differently).
+
+Some of the math functions are defined mathematically to result in a complex value over parts of their domains. The most familiar example of this is taking the square root of a negative number. The complex math functions, such as csqrt, will return the appropriate complex value in this case. The real-valued functions, such as sqrt, will signal a domain error.
+
+Some older hardware does not support infinities. On that hardware, overflows instead return a particular very large number (usually the largest representable number). math.h defines macros you can use to test for overflow on both old and new hardware.
+
+Macro: double HUGE_VAL
+Macro: float HUGE_VALF
+Macro: long double HUGE_VALL
+Macro: _FloatN HUGE_VAL_FN
+Macro: _FloatNx HUGE_VAL_FNx
+An expression representing a particular very large number. On machines that use IEEE 754 floating point format, HUGE_VAL is infinity. On other machines, it’s typically the largest positive number that can be represented.
+
+Mathematical functions return the appropriately typed version of HUGE_VAL or -HUGE_VAL when the result is too large to be represented.
+
+Next: Floating-Point Control Functions, Previous: Errors in Floating-Point Calculations, Up: Arithmetic Functions   [Contents][Index]
+
+20.6 Rounding Modes
+Floating-point calculations are carried out internally with extra precision, and then rounded to fit into the destination type. This ensures that results are as precise as the input data. IEEE 754 defines four possible rounding modes:
+
+Round to nearest.
+This is the default mode. It should be used unless there is a specific need for one of the others. In this mode results are rounded to the nearest representable value. If the result is midway between two representable values, the even representable is chosen. Even here means the lowest-order bit is zero. This rounding mode prevents statistical bias and guarantees numeric stability: round-off errors in a lengthy calculation will remain smaller than half of FLT_EPSILON.
+
+Round toward plus Infinity.
+All results are rounded to the smallest representable value which is greater than the result.
+
+Round toward minus Infinity.
+All results are rounded to the largest representable value which is less than the result.
+
+Round toward zero.
+All results are rounded to the largest representable value whose magnitude is less than that of the result. In other words, if the result is negative it is rounded up; if it is positive, it is rounded down.
+
+fenv.h defines constants which you can use to refer to the various rounding modes. Each one will be defined if and only if the FPU supports the corresponding rounding mode.
+
+FE_TONEAREST
+Round to nearest.
+
+FE_UPWARD
+Round toward +∞.
+
+FE_DOWNWARD
+Round toward -∞.
+
+FE_TOWARDZERO
+Round toward zero.
+
+Underflow is an unusual case. Normally, IEEE 754 floating point numbers are always normalized (see Floating Point Representation Concepts). Numbers smaller than 2^r (where r is the minimum exponent, FLT_MIN_RADIX-1 for float) cannot be represented as normalized numbers. Rounding all such numbers to zero or 2^r would cause some algorithms to fail at 0. Therefore, they are left in denormalized form. That produces loss of precision, since some bits of the mantissa are stolen to indicate the decimal point.
+
+If a result is too small to be represented as a denormalized number, it is rounded to zero. However, the sign of the result is preserved; if the calculation was negative, the result is negative zero. Negative zero can also result from some operations on infinity, such as 4/-∞.
+
+At any time, one of the above four rounding modes is selected. You can find out which one with this function:
+
+Function: int fegetround (void)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Returns the currently selected rounding mode, represented by one of the values of the defined rounding mode macros.
+
+To change the rounding mode, use this function:
+
+Function: int fesetround (int round)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Changes the currently selected rounding mode to round. If round does not correspond to one of the supported rounding modes nothing is changed. fesetround returns zero if it changed the rounding mode, or a nonzero value if the mode is not supported.
+
+You should avoid changing the rounding mode if possible. It can be an expensive operation; also, some hardware requires you to compile your program differently for it to work. The resulting code may run slower. See your compiler documentation for details.
+
+Next: Arithmetic Functions, Previous: Rounding Modes, Up: Arithmetic Functions   [Contents][Index]
+
+20.7 Floating-Point Control Functions
+IEEE 754 floating-point implementations allow the programmer to decide whether traps will occur for each of the exceptions, by setting bits in the control word. In C, traps result in the program receiving the SIGFPE signal; see Signal Handling.
+
+NB: IEEE 754 says that trap handlers are given details of the exceptional situation, and can set the result value. C signals do not provide any mechanism to pass this information back and forth. Trapping exceptions in C is therefore not very useful.
+
+It is sometimes necessary to save the state of the floating-point unit while you perform some calculation. The library provides functions which save and restore the exception flags, the set of exceptions that generate traps, and the rounding mode. This information is known as the floating-point environment.
+
+The functions to save and restore the floating-point environment all use a variable of type fenv_t to store information. This type is defined in fenv.h. Its size and contents are implementation-defined. You should not attempt to manipulate a variable of this type directly.
+
+To save the state of the FPU, use one of these functions:
+
+Function: int fegetenv (fenv_t *envp)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Store the floating-point environment in the variable pointed to by envp.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+Function: int feholdexcept (fenv_t *envp)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Store the current floating-point environment in the object pointed to by envp. Then clear all exception flags, and set the FPU to trap no exceptions. Not all FPUs support trapping no exceptions; if feholdexcept cannot set this mode, it returns nonzero value. If it succeeds, it returns zero.
+
+The functions which restore the floating-point environment can take these kinds of arguments:
+
+Pointers to fenv_t objects, which were initialized previously by a call to fegetenv or feholdexcept.
+The special macro FE_DFL_ENV which represents the floating-point environment as it was available at program start.
+Implementation defined macros with names starting with FE_ and having type fenv_t *.
+If possible, the GNU C Library defines a macro FE_NOMASK_ENV which represents an environment where every exception raised causes a trap to occur. You can test for this macro using #ifdef. It is only defined if _GNU_SOURCE is defined.
+
+Some platforms might define other predefined environments.
+
+To set the floating-point environment, you can use either of these functions:
+
+Function: int fesetenv (const fenv_t *envp)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Set the floating-point environment to that described by envp.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+Function: int feupdateenv (const fenv_t *envp)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Like fesetenv, this function sets the floating-point environment to that described by envp. However, if any exceptions were flagged in the status word before feupdateenv was called, they remain flagged after the call. In other words, after feupdateenv is called, the status word is the bitwise OR of the previous status word and the one saved in envp.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+TS 18661-1:2014 defines additional functions to save and restore floating-point control modes (such as the rounding mode and whether traps are enabled) while leaving other status (such as raised flags) unchanged.
+
+The special macro FE_DFL_MODE may be passed to fesetmode. It represents the floating-point control modes at program start.
+
+Function: int fegetmode (femode_t *modep)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Store the floating-point control modes in the variable pointed to by modep.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+Function: int fesetmode (const femode_t *modep)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+Set the floating-point control modes to those described by modep.
+
+The function returns zero in case the operation was successful, a non-zero value otherwise.
+
+To control for individual exceptions if raising them causes a trap to occur, you can use the following two functions.
+
+Portability Note: These functions are all GNU extensions.
+
+Function: int feenableexcept (int excepts)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function enables traps for each of the exceptions as indicated by the parameter excepts. The individual exceptions are described in Examining the FPU status word. Only the specified exceptions are enabled, the status of the other exceptions is not changed.
+
+The function returns the previous enabled exceptions in case the operation was successful, -1 otherwise.
+
+Function: int fedisableexcept (int excepts)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function disables traps for each of the exceptions as indicated by the parameter excepts. The individual exceptions are described in Examining the FPU status word. Only the specified exceptions are disabled, the status of the other exceptions is not changed.
+
+The function returns the previous enabled exceptions in case the operation was successful, -1 otherwise.
+
+Function: int fegetexcept (void)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The function returns a bitmask of all currently enabled exceptions. It returns -1 in case of failure.
+
+Next: Complex Numbers, Previous: Floating-Point Control Functions, Up: Arithmetic Functions   [Contents][Index]
+
+20.8 Arithmetic Functions
+The C library provides functions to do basic operations on floating-point numbers. These include absolute value, maximum and minimum, normalization, bit twiddling, rounding, and a few others.
+
+Absolute Value
+Normalization Functions
+Rounding Functions
+Remainder Functions
+Setting and modifying single bits of FP values
+Floating-Point Comparison Functions
+Miscellaneous FP arithmetic functions
+Next: Normalization Functions, Up: Arithmetic Functions   [Contents][Index]
+
+20.8.1 Absolute Value
+These functions are provided for obtaining the absolute value (or magnitude) of a number. The absolute value of a real number x is x if x is positive, -x if x is negative. For a complex number z, whose real part is x and whose imaginary part is y, the absolute value is sqrt (x*x + y*y).
+
+Prototypes for abs, labs and llabs are in stdlib.h; imaxabs is declared in inttypes.h; the fabs functions are declared in math.h; the cabs functions are declared in complex.h.
+
+Function: int abs (int number)
+Function: long int labs (long int number)
+Function: long long int llabs (long long int number)
+Function: intmax_t imaxabs (intmax_t number)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return the absolute value of number.
+
+Most computers use a two’s complement integer representation, in which the absolute value of INT_MIN (the smallest possible int) cannot be represented; thus, abs (INT_MIN) is not defined.
+
+llabs and imaxdiv are new to ISO C99.
+
+See Integers for a description of the intmax_t type.
+
+Function: double fabs (double number)
+Function: float fabsf (float number)
+Function: long double fabsl (long double number)
+Function: _FloatN fabsfN (_FloatN number)
+Function: _FloatNx fabsfNx (_FloatNx number)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the absolute value of the floating-point number number.
+
+Function: double cabs (complex double z)
+Function: float cabsf (complex float z)
+Function: long double cabsl (complex long double z)
+Function: _FloatN cabsfN (complex _FloatN z)
+Function: _FloatNx cabsfNx (complex _FloatNx z)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return the absolute value of the complex number z (see Complex Numbers). The absolute value of a complex number is:
+
+sqrt (creal (z) * creal (z) + cimag (z) * cimag (z))
+This function should always be used instead of the direct formula because it takes special care to avoid losing precision. It may also take advantage of hardware support for this operation. See hypot in Exponentiation and Logarithms.
+
+Next: Rounding Functions, Previous: Absolute Value, Up: Arithmetic Functions   [Contents][Index]
+
+20.8.2 Normalization Functions
+The functions described in this section are primarily provided as a way to efficiently perform certain low-level manipulations on floating point numbers that are represented internally using a binary radix; see Floating Point Representation Concepts. These functions are required to have equivalent behavior even if the representation does not use a radix of 2, but of course they are unlikely to be particularly efficient in those cases.
+
+All these functions are declared in math.h.
+
+Function: double frexp (double value, int *exponent)
+Function: float frexpf (float value, int *exponent)
+Function: long double frexpl (long double value, int *exponent)
+Function: _FloatN frexpfN (_FloatN value, int *exponent)
+Function: _FloatNx frexpfNx (_FloatNx value, int *exponent)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions are used to split the number value into a normalized fraction and an exponent.
+
+If the argument value is not zero, the return value is value times a power of two, and its magnitude is always in the range 1/2 (inclusive) to 1 (exclusive). The corresponding exponent is stored in *exponent; the return value multiplied by 2 raised to this exponent equals the original number value.
+
+For example, frexp (12.8, &exponent) returns 0.8 and stores 4 in exponent.
+
+If value is zero, then the return value is zero and zero is stored in *exponent.
+
+Function: double ldexp (double value, int exponent)
+Function: float ldexpf (float value, int exponent)
+Function: long double ldexpl (long double value, int exponent)
+Function: _FloatN ldexpfN (_FloatN value, int exponent)
+Function: _FloatNx ldexpfNx (_FloatNx value, int exponent)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return the result of multiplying the floating-point number value by 2 raised to the power exponent. (It can be used to reassemble floating-point numbers that were taken apart by frexp.)
+
+For example, ldexp (0.8, 4) returns 12.8.
+
+The following functions, which come from BSD, provide facilities equivalent to those of ldexp and frexp. See also the ISO C function logb which originally also appeared in BSD. The _FloatN and _FloatN variants of the following functions come from TS 18661-3:2015.
+
+Function: double scalb (double value, double exponent)
+Function: float scalbf (float value, float exponent)
+Function: long double scalbl (long double value, long double exponent)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The scalb function is the BSD name for ldexp.
+
+Function: double scalbn (double x, int n)
+Function: float scalbnf (float x, int n)
+Function: long double scalbnl (long double x, int n)
+Function: _FloatN scalbnfN (_FloatN x, int n)
+Function: _FloatNx scalbnfNx (_FloatNx x, int n)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+scalbn is identical to scalb, except that the exponent n is an int instead of a floating-point number.
+
+Function: double scalbln (double x, long int n)
+Function: float scalblnf (float x, long int n)
+Function: long double scalblnl (long double x, long int n)
+Function: _FloatN scalblnfN (_FloatN x, long int n)
+Function: _FloatNx scalblnfNx (_FloatNx x, long int n)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+scalbln is identical to scalb, except that the exponent n is a long int instead of a floating-point number.
+
+Function: double significand (double x)
+Function: float significandf (float x)
+Function: long double significandl (long double x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+significand returns the mantissa of x scaled to the range [1, 2). It is equivalent to scalb (x, (double) -ilogb (x)).
+
+This function exists mainly for use in certain standardized tests of IEEE 754 conformance.
+
+Next: Remainder Functions, Previous: Normalization Functions, Up: Arithmetic Functions   [Contents][Index]
+
+20.8.3 Rounding Functions
+The functions listed here perform operations such as rounding and truncation of floating-point values. Some of these functions convert floating point numbers to integer values. They are all declared in math.h.
+
+You can also convert floating-point numbers to integers simply by casting them to int. This discards the fractional part, effectively rounding towards zero. However, this only works if the result can actually be represented as an int—for very large numbers, this is impossible. The functions listed here return the result as a double instead to get around this problem.
+
+The fromfp functions use the following macros, from TS 18661-1:2014, to specify the direction of rounding. These correspond to the rounding directions defined in IEEE 754-2008.
+
+FP_INT_UPWARD
+Round toward +∞.
+
+FP_INT_DOWNWARD
+Round toward -∞.
+
+FP_INT_TOWARDZERO
+Round toward zero.
+
+FP_INT_TONEARESTFROMZERO
+Round to nearest, ties round away from zero.
+
+FP_INT_TONEAREST
+Round to nearest, ties round to even.
+
+Function: double ceil (double x)
+Function: float ceilf (float x)
+Function: long double ceill (long double x)
+Function: _FloatN ceilfN (_FloatN x)
+Function: _FloatNx ceilfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions round x upwards to the nearest integer, returning that value as a double. Thus, ceil (1.5) is 2.0.
+
+Function: double floor (double x)
+Function: float floorf (float x)
+Function: long double floorl (long double x)
+Function: _FloatN floorfN (_FloatN x)
+Function: _FloatNx floorfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions round x downwards to the nearest integer, returning that value as a double. Thus, floor (1.5) is 1.0 and floor (-1.5) is -2.0.
+
+Function: double trunc (double x)
+Function: float truncf (float x)
+Function: long double truncl (long double x)
+Function: _FloatN truncfN (_FloatN x)
+Function: _FloatNx truncfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The trunc functions round x towards zero to the nearest integer (returned in floating-point format). Thus, trunc (1.5) is 1.0 and trunc (-1.5) is -1.0.
+
+Function: double rint (double x)
+Function: float rintf (float x)
+Function: long double rintl (long double x)
+Function: _FloatN rintfN (_FloatN x)
+Function: _FloatNx rintfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions round x to an integer value according to the current rounding mode. See Floating Point Parameters, for information about the various rounding modes. The default rounding mode is to round to the nearest integer; some machines support other modes, but round-to-nearest is always used unless you explicitly select another.
+
+If x was not initially an integer, these functions raise the inexact exception.
+
+Function: double nearbyint (double x)
+Function: float nearbyintf (float x)
+Function: long double nearbyintl (long double x)
+Function: _FloatN nearbyintfN (_FloatN x)
+Function: _FloatNx nearbyintfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return the same value as the rint functions, but do not raise the inexact exception if x is not an integer.
+
+Function: double round (double x)
+Function: float roundf (float x)
+Function: long double roundl (long double x)
+Function: _FloatN roundfN (_FloatN x)
+Function: _FloatNx roundfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions are similar to rint, but they round halfway cases away from zero instead of to the nearest integer (or other current rounding mode).
+
+Function: double roundeven (double x)
+Function: float roundevenf (float x)
+Function: long double roundevenl (long double x)
+Function: _FloatN roundevenfN (_FloatN x)
+Function: _FloatNx roundevenfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, are similar to round, but they round halfway cases to even instead of away from zero.
+
+Function: long int lrint (double x)
+Function: long int lrintf (float x)
+Function: long int lrintl (long double x)
+Function: long int lrintfN (_FloatN x)
+Function: long int lrintfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions are just like rint, but they return a long int instead of a floating-point number.
+
+Function: long long int llrint (double x)
+Function: long long int llrintf (float x)
+Function: long long int llrintl (long double x)
+Function: long long int llrintfN (_FloatN x)
+Function: long long int llrintfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions are just like rint, but they return a long long int instead of a floating-point number.
+
+Function: long int lround (double x)
+Function: long int lroundf (float x)
+Function: long int lroundl (long double x)
+Function: long int lroundfN (_FloatN x)
+Function: long int lroundfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions are just like round, but they return a long int instead of a floating-point number.
+
+Function: long long int llround (double x)
+Function: long long int llroundf (float x)
+Function: long long int llroundl (long double x)
+Function: long long int llroundfN (_FloatN x)
+Function: long long int llroundfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions are just like round, but they return a long long int instead of a floating-point number.
+
+Function: intmax_t fromfp (double x, int round, unsigned int width)
+Function: intmax_t fromfpf (float x, int round, unsigned int width)
+Function: intmax_t fromfpl (long double x, int round, unsigned int width)
+Function: intmax_t fromfpfN (_FloatN x, int round, unsigned int width)
+Function: intmax_t fromfpfNx (_FloatNx x, int round, unsigned int width)
+Function: uintmax_t ufromfp (double x, int round, unsigned int width)
+Function: uintmax_t ufromfpf (float x, int round, unsigned int width)
+Function: uintmax_t ufromfpl (long double x, int round, unsigned int width)
+Function: uintmax_t ufromfpfN (_FloatN x, int round, unsigned int width)
+Function: uintmax_t ufromfpfNx (_FloatNx x, int round, unsigned int width)
+Function: intmax_t fromfpx (double x, int round, unsigned int width)
+Function: intmax_t fromfpxf (float x, int round, unsigned int width)
+Function: intmax_t fromfpxl (long double x, int round, unsigned int width)
+Function: intmax_t fromfpxfN (_FloatN x, int round, unsigned int width)
+Function: intmax_t fromfpxfNx (_FloatNx x, int round, unsigned int width)
+Function: uintmax_t ufromfpx (double x, int round, unsigned int width)
+Function: uintmax_t ufromfpxf (float x, int round, unsigned int width)
+Function: uintmax_t ufromfpxl (long double x, int round, unsigned int width)
+Function: uintmax_t ufromfpxfN (_FloatN x, int round, unsigned int width)
+Function: uintmax_t ufromfpxfNx (_FloatNx x, int round, unsigned int width)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, convert a floating-point number to an integer according to the rounding direction round (one of the FP_INT_* macros). If the integer is outside the range of a signed or unsigned (depending on the return type of the function) type of width width bits (or outside the range of the return type, if width is larger), or if x is infinite or NaN, or if width is zero, a domain error occurs and an unspecified value is returned. The functions with an ‘x’ in their names raise the inexact exception when a domain error does not occur and the argument is not an integer; the other functions do not raise the inexact exception.
+
+Function: double modf (double value, double *integer-part)
+Function: float modff (float value, float *integer-part)
+Function: long double modfl (long double value, long double *integer-part)
+Function: _FloatN modffN (_FloatN value, _FloatN *integer-part)
+Function: _FloatNx modffNx (_FloatNx value, _FloatNx *integer-part)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions break the argument value into an integer part and a fractional part (between -1 and 1, exclusive). Their sum equals value. Each of the parts has the same sign as value, and the integer part is always rounded toward zero.
+
+modf stores the integer part in *integer-part, and returns the fractional part. For example, modf (2.5, &intpart) returns 0.5 and stores 2.0 into intpart.
+
+Next: Setting and modifying single bits of FP values, Previous: Rounding Functions, Up: Arithmetic Functions   [Contents][Index]
+
+20.8.4 Remainder Functions
+The functions in this section compute the remainder on division of two floating-point numbers. Each is a little different; pick the one that suits your problem.
+
+Function: double fmod (double numerator, double denominator)
+Function: float fmodf (float numerator, float denominator)
+Function: long double fmodl (long double numerator, long double denominator)
+Function: _FloatN fmodfN (_FloatN numerator, _FloatN denominator)
+Function: _FloatNx fmodfNx (_FloatNx numerator, _FloatNx denominator)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions compute the remainder from the division of numerator by denominator. Specifically, the return value is numerator - n * denominator, where n is the quotient of numerator divided by denominator, rounded towards zero to an integer. Thus, fmod (6.5, 2.3) returns 1.9, which is 6.5 minus 4.6.
+
+The result has the same sign as the numerator and has magnitude less than the magnitude of the denominator.
+
+If denominator is zero, fmod signals a domain error.
+
+Function: double remainder (double numerator, double denominator)
+Function: float remainderf (float numerator, float denominator)
+Function: long double remainderl (long double numerator, long double denominator)
+Function: _FloatN remainderfN (_FloatN numerator, _FloatN denominator)
+Function: _FloatNx remainderfNx (_FloatNx numerator, _FloatNx denominator)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions are like fmod except that they round the internal quotient n to the nearest integer instead of towards zero to an integer. For example, remainder (6.5, 2.3) returns -0.4, which is 6.5 minus 6.9.
+
+The absolute value of the result is less than or equal to half the absolute value of the denominator. The difference between fmod (numerator, denominator) and remainder (numerator, denominator) is always either denominator, minus denominator, or zero.
+
+If denominator is zero, remainder signals a domain error.
+
+Function: double drem (double numerator, double denominator)
+Function: float dremf (float numerator, float denominator)
+Function: long double dreml (long double numerator, long double denominator)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is another name for remainder.
+
+Next: Floating-Point Comparison Functions, Previous: Remainder Functions, Up: Arithmetic Functions   [Contents][Index]
+
+20.8.5 Setting and modifying single bits of FP values
+There are some operations that are too complicated or expensive to perform by hand on floating-point numbers. ISO C99 defines functions to do these operations, which mostly involve changing single bits.
+
+Function: double copysign (double x, double y)
+Function: float copysignf (float x, float y)
+Function: long double copysignl (long double x, long double y)
+Function: _FloatN copysignfN (_FloatN x, _FloatN y)
+Function: _FloatNx copysignfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return x but with the sign of y. They work even if x or y are NaN or zero. Both of these can carry a sign (although not all implementations support it) and this is one of the few operations that can tell the difference.
+
+copysign never raises an exception.
+
+This function is defined in IEC 559 (and the appendix with recommended functions in IEEE 754/IEEE 854).
+
+Function: int signbit (float-type x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+signbit is a generic macro which can work on all floating-point types. It returns a nonzero value if the value of x has its sign bit set.
+
+This is not the same as x < 0.0, because IEEE 754 floating point allows zero to be signed. The comparison -0.0 < 0.0 is false, but signbit (-0.0) will return a nonzero value.
+
+Function: double nextafter (double x, double y)
+Function: float nextafterf (float x, float y)
+Function: long double nextafterl (long double x, long double y)
+Function: _FloatN nextafterfN (_FloatN x, _FloatN y)
+Function: _FloatNx nextafterfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The nextafter function returns the next representable neighbor of x in the direction towards y. The size of the step between x and the result depends on the type of the result. If x = y the function simply returns y. If either value is NaN, NaN is returned. Otherwise a value corresponding to the value of the least significant bit in the mantissa is added or subtracted, depending on the direction. nextafter will signal overflow or underflow if the result goes outside of the range of normalized numbers.
+
+This function is defined in IEC 559 (and the appendix with recommended functions in IEEE 754/IEEE 854).
+
+Function: double nexttoward (double x, long double y)
+Function: float nexttowardf (float x, long double y)
+Function: long double nexttowardl (long double x, long double y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions are identical to the corresponding versions of nextafter except that their second argument is a long double.
+
+Function: double nextup (double x)
+Function: float nextupf (float x)
+Function: long double nextupl (long double x)
+Function: _FloatN nextupfN (_FloatN x)
+Function: _FloatNx nextupfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The nextup function returns the next representable neighbor of x in the direction of positive infinity. If x is the smallest negative subnormal number in the type of x the function returns -0. If x = 0 the function returns the smallest positive subnormal number in the type of x. If x is NaN, NaN is returned. If x is +∞, +∞ is returned. nextup is from TS 18661-1:2014 and TS 18661-3:2015. nextup never raises an exception except for signaling NaNs.
+
+Function: double nextdown (double x)
+Function: float nextdownf (float x)
+Function: long double nextdownl (long double x)
+Function: _FloatN nextdownfN (_FloatN x)
+Function: _FloatNx nextdownfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The nextdown function returns the next representable neighbor of x in the direction of negative infinity. If x is the smallest positive subnormal number in the type of x the function returns +0. If x = 0 the function returns the smallest negative subnormal number in the type of x. If x is NaN, NaN is returned. If x is -∞, -∞ is returned. nextdown is from TS 18661-1:2014 and TS 18661-3:2015. nextdown never raises an exception except for signaling NaNs.
+
+Function: double nan (const char *tagp)
+Function: float nanf (const char *tagp)
+Function: long double nanl (const char *tagp)
+Function: _FloatN nanfN (const char *tagp)
+Function: _FloatNx nanfNx (const char *tagp)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The nan function returns a representation of NaN, provided that NaN is supported by the target platform. nan ("n-char-sequence") is equivalent to strtod ("NAN(n-char-sequence)").
+
+The argument tagp is used in an unspecified manner. On IEEE 754 systems, there are many representations of NaN, and tagp selects one. On other systems it may do nothing.
+
+Function: int canonicalize (double *cx, const double *x)
+Function: int canonicalizef (float *cx, const float *x)
+Function: int canonicalizel (long double *cx, const long double *x)
+Function: int canonicalizefN (_FloatN *cx, const _FloatN *x)
+Function: int canonicalizefNx (_FloatNx *cx, const _FloatNx *x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+In some floating-point formats, some values have canonical (preferred) and noncanonical encodings (for IEEE interchange binary formats, all encodings are canonical). These functions, defined by TS 18661-1:2014 and TS 18661-3:2015, attempt to produce a canonical version of the floating-point value pointed to by x; if that value is a signaling NaN, they raise the invalid exception and produce a quiet NaN. If a canonical value is produced, it is stored in the object pointed to by cx, and these functions return zero. Otherwise (if a canonical value could not be produced because the object pointed to by x is not a valid representation of any floating-point value), the object pointed to by cx is unchanged and a nonzero value is returned.
+
+Note that some formats have multiple encodings of a value which are all equally canonical; when such an encoding is used as an input to this function, any such encoding of the same value (or of the corresponding quiet NaN, if that value is a signaling NaN) may be produced as output.
+
+Function: double getpayload (const double *x)
+Function: float getpayloadf (const float *x)
+Function: long double getpayloadl (const long double *x)
+Function: _FloatN getpayloadfN (const _FloatN *x)
+Function: _FloatNx getpayloadfNx (const _FloatNx *x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+IEEE 754 defines the payload of a NaN to be an integer value encoded in the representation of the NaN. Payloads are typically propagated from NaN inputs to the result of a floating-point operation. These functions, defined by TS 18661-1:2014 and TS 18661-3:2015, return the payload of the NaN pointed to by x (returned as a positive integer, or positive zero, represented as a floating-point number); if x is not a NaN, they return -1. They raise no floating-point exceptions even for signaling NaNs. (The return value of -1 for an argument that is not a NaN is specified in C2x; the value was unspecified in TS 18661.)
+
+Function: int setpayload (double *x, double payload)
+Function: int setpayloadf (float *x, float payload)
+Function: int setpayloadl (long double *x, long double payload)
+Function: int setpayloadfN (_FloatN *x, _FloatN payload)
+Function: int setpayloadfNx (_FloatNx *x, _FloatNx payload)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, defined by TS 18661-1:2014 and TS 18661-3:2015, set the object pointed to by x to a quiet NaN with payload payload and a zero sign bit and return zero. If payload is not a positive-signed integer that is a valid payload for a quiet NaN of the given type, the object pointed to by x is set to positive zero and a nonzero value is returned. They raise no floating-point exceptions.
+
+Function: int setpayloadsig (double *x, double payload)
+Function: int setpayloadsigf (float *x, float payload)
+Function: int setpayloadsigl (long double *x, long double payload)
+Function: int setpayloadsigfN (_FloatN *x, _FloatN payload)
+Function: int setpayloadsigfNx (_FloatNx *x, _FloatNx payload)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, defined by TS 18661-1:2014 and TS 18661-3:2015, set the object pointed to by x to a signaling NaN with payload payload and a zero sign bit and return zero. If payload is not a positive-signed integer that is a valid payload for a signaling NaN of the given type, the object pointed to by x is set to positive zero and a nonzero value is returned. They raise no floating-point exceptions.
+
+Next: Miscellaneous FP arithmetic functions, Previous: Setting and modifying single bits of FP values, Up: Arithmetic Functions   [Contents][Index]
+
+20.8.6 Floating-Point Comparison Functions
+The standard C comparison operators provoke exceptions when one or other of the operands is NaN. For example,
+
+int v = a < 1.0;
+will raise an exception if a is NaN. (This does not happen with == and !=; those merely return false and true, respectively, when NaN is examined.) Frequently this exception is undesirable. ISO C99 therefore defines comparison functions that do not raise exceptions when NaN is examined. All of the functions are implemented as macros which allow their arguments to be of any floating-point type. The macros are guaranteed to evaluate their arguments only once. TS 18661-1:2014 adds such a macro for an equality comparison that does raise an exception for a NaN argument; it also adds functions that provide a total ordering on all floating-point values, including NaNs, without raising any exceptions even for signaling NaNs.
+
+Macro: int isgreater (real-floating x, real-floating y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro determines whether the argument x is greater than y. It is equivalent to (x) > (y), but no exception is raised if x or y are NaN.
+
+Macro: int isgreaterequal (real-floating x, real-floating y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro determines whether the argument x is greater than or equal to y. It is equivalent to (x) >= (y), but no exception is raised if x or y are NaN.
+
+Macro: int isless (real-floating x, real-floating y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro determines whether the argument x is less than y. It is equivalent to (x) < (y), but no exception is raised if x or y are NaN.
+
+Macro: int islessequal (real-floating x, real-floating y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro determines whether the argument x is less than or equal to y. It is equivalent to (x) <= (y), but no exception is raised if x or y are NaN.
+
+Macro: int islessgreater (real-floating x, real-floating y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro determines whether the argument x is less or greater than y. It is equivalent to (x) < (y) || (x) > (y) (although it only evaluates x and y once), but no exception is raised if x or y are NaN.
+
+This macro is not equivalent to x != y, because that expression is true if x or y are NaN.
+
+Macro: int isunordered (real-floating x, real-floating y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro determines whether its arguments are unordered. In other words, it is true if x or y are NaN, and false otherwise.
+
+Macro: int iseqsig (real-floating x, real-floating y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This macro determines whether its arguments are equal. It is equivalent to (x) == (y), but it raises the invalid exception and sets errno to EDOM if either argument is a NaN.
+
+Function: int totalorder (const double *x, const double *y)
+Function: int totalorderf (const float *x, const float *y)
+Function: int totalorderl (const long double *x, const long double *y)
+Function: int totalorderfN (const _FloatN *x, const _FloatN *y)
+Function: int totalorderfNx (const _FloatNx *x, const _FloatNx *y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions determine whether the total order relationship, defined in IEEE 754-2008, is true for *x and *y, returning nonzero if it is true and zero if it is false. No exceptions are raised even for signaling NaNs. The relationship is true if they are the same floating-point value (including sign for zero and NaNs, and payload for NaNs), or if *x comes before *y in the following order: negative quiet NaNs, in order of decreasing payload; negative signaling NaNs, in order of decreasing payload; negative infinity; finite numbers, in ascending order, with negative zero before positive zero; positive infinity; positive signaling NaNs, in order of increasing payload; positive quiet NaNs, in order of increasing payload.
+
+Function: int totalordermag (const double *x, const double *y)
+Function: int totalordermagf (const float *x, const float *y)
+Function: int totalordermagl (const long double *x, const long double *y)
+Function: int totalordermagfN (const _FloatN *x, const _FloatN *y)
+Function: int totalordermagfNx (const _FloatNx *x, const _FloatNx *y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions determine whether the total order relationship, defined in IEEE 754-2008, is true for the absolute values of *x and *y, returning nonzero if it is true and zero if it is false. No exceptions are raised even for signaling NaNs.
+
+Not all machines provide hardware support for these operations. On machines that don’t, the macros can be very slow. Therefore, you should not use these functions when NaN is not a concern.
+
+NB: There are no macros isequal or isunequal. They are unnecessary, because the == and != operators do not throw an exception if one or both of the operands are NaN.
+
+Previous: Floating-Point Comparison Functions, Up: Arithmetic Functions   [Contents][Index]
+
+20.8.7 Miscellaneous FP arithmetic functions
+The functions in this section perform miscellaneous but common operations that are awkward to express with C operators. On some processors these functions can use special machine instructions to perform these operations faster than the equivalent C code.
+
+Function: double fmin (double x, double y)
+Function: float fminf (float x, float y)
+Function: long double fminl (long double x, long double y)
+Function: _FloatN fminfN (_FloatN x, _FloatN y)
+Function: _FloatNx fminfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fmin function returns the lesser of the two values x and y. It is similar to the expression
+
+((x) < (y) ? (x) : (y))
+except that x and y are only evaluated once.
+
+If an argument is a quiet NaN, the other argument is returned. If both arguments are NaN, or either is a signaling NaN, NaN is returned.
+
+Function: double fmax (double x, double y)
+Function: float fmaxf (float x, float y)
+Function: long double fmaxl (long double x, long double y)
+Function: _FloatN fmaxfN (_FloatN x, _FloatN y)
+Function: _FloatNx fmaxfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fmax function returns the greater of the two values x and y.
+
+If an argument is a quiet NaN, the other argument is returned. If both arguments are NaN, or either is a signaling NaN, NaN is returned.
+
+Function: double fminimum (double x, double y)
+Function: float fminimumf (float x, float y)
+Function: long double fminimuml (long double x, long double y)
+Function: _FloatN fminimumfN (_FloatN x, _FloatN y)
+Function: _FloatNx fminimumfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fminimum function returns the lesser of the two values x and y. Unlike fmin, if either argument is a NaN, NaN is returned. Positive zero is treated as greater than negative zero.
+
+Function: double fmaximum (double x, double y)
+Function: float fmaximumf (float x, float y)
+Function: long double fmaximuml (long double x, long double y)
+Function: _FloatN fmaximumfN (_FloatN x, _FloatN y)
+Function: _FloatNx fmaximumfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fmaximum function returns the greater of the two values x and y. Unlike fmax, if either argument is a NaN, NaN is returned. Positive zero is treated as greater than negative zero.
+
+Function: double fminimum_num (double x, double y)
+Function: float fminimum_numf (float x, float y)
+Function: long double fminimum_numl (long double x, long double y)
+Function: _FloatN fminimum_numfN (_FloatN x, _FloatN y)
+Function: _FloatNx fminimum_numfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fminimum_num function returns the lesser of the two values x and y. If one argument is a number and the other is a NaN, even a signaling NaN, the number is returned. Positive zero is treated as greater than negative zero.
+
+Function: double fmaximum_num (double x, double y)
+Function: float fmaximum_numf (float x, float y)
+Function: long double fmaximum_numl (long double x, long double y)
+Function: _FloatN fmaximum_numfN (_FloatN x, _FloatN y)
+Function: _FloatNx fmaximum_numfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fmaximum_num function returns the greater of the two values x and y. If one argument is a number and the other is a NaN, even a signaling NaN, the number is returned. Positive zero is treated as greater than negative zero.
+
+Function: double fminmag (double x, double y)
+Function: float fminmagf (float x, float y)
+Function: long double fminmagl (long double x, long double y)
+Function: _FloatN fminmagfN (_FloatN x, _FloatN y)
+Function: _FloatNx fminmagfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, return whichever of the two values x and y has the smaller absolute value. If both have the same absolute value, or either is NaN, they behave the same as the fmin functions.
+
+Function: double fmaxmag (double x, double y)
+Function: float fmaxmagf (float x, float y)
+Function: long double fmaxmagl (long double x, long double y)
+Function: _FloatN fmaxmagfN (_FloatN x, _FloatN y)
+Function: _FloatNx fmaxmagfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014, return whichever of the two values x and y has the greater absolute value. If both have the same absolute value, or either is NaN, they behave the same as the fmax functions.
+
+Function: double fminimum_mag (double x, double y)
+Function: float fminimum_magf (float x, float y)
+Function: long double fminimum_magl (long double x, long double y)
+Function: _FloatN fminimum_magfN (_FloatN x, _FloatN y)
+Function: _FloatNx fminimum_magfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return whichever of the two values x and y has the smaller absolute value. If both have the same absolute value, or either is NaN, they behave the same as the fminimum functions.
+
+Function: double fmaximum_mag (double x, double y)
+Function: float fmaximum_magf (float x, float y)
+Function: long double fmaximum_magl (long double x, long double y)
+Function: _FloatN fmaximum_magfN (_FloatN x, _FloatN y)
+Function: _FloatNx fmaximum_magfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return whichever of the two values x and y has the greater absolute value. If both have the same absolute value, or either is NaN, they behave the same as the fmaximum functions.
+
+Function: double fminimum_mag_num (double x, double y)
+Function: float fminimum_mag_numf (float x, float y)
+Function: long double fminimum_mag_numl (long double x, long double y)
+Function: _FloatN fminimum_mag_numfN (_FloatN x, _FloatN y)
+Function: _FloatNx fminimum_mag_numfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return whichever of the two values x and y has the smaller absolute value. If both have the same absolute value, or either is NaN, they behave the same as the fminimum_num functions.
+
+Function: double fmaximum_mag_num (double x, double y)
+Function: float fmaximum_mag_numf (float x, float y)
+Function: long double fmaximum_mag_numl (long double x, long double y)
+Function: _FloatN fmaximum_mag_numfN (_FloatN x, _FloatN y)
+Function: _FloatNx fmaximum_mag_numfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return whichever of the two values x and y has the greater absolute value. If both have the same absolute value, or either is NaN, they behave the same as the fmaximum_num functions.
+
+Function: double fdim (double x, double y)
+Function: float fdimf (float x, float y)
+Function: long double fdiml (long double x, long double y)
+Function: _FloatN fdimfN (_FloatN x, _FloatN y)
+Function: _FloatNx fdimfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fdim function returns the positive difference between x and y. The positive difference is x - y if x is greater than y, and 0 otherwise.
+
+If x, y, or both are NaN, NaN is returned.
+
+Function: double fma (double x, double y, double z)
+Function: float fmaf (float x, float y, float z)
+Function: long double fmal (long double x, long double y, long double z)
+Function: _FloatN fmafN (_FloatN x, _FloatN y, _FloatN z)
+Function: _FloatNx fmafNx (_FloatNx x, _FloatNx y, _FloatNx z)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fma function performs floating-point multiply-add. This is the operation (x · y) + z, but the intermediate result is not rounded to the destination type. This can sometimes improve the precision of a calculation.
+
+This function was introduced because some processors have a special instruction to perform multiply-add. The C compiler cannot use it directly, because the expression ‘x*y + z’ is defined to round the intermediate result. fma lets you choose when you want to round only once.
+
+On processors which do not implement multiply-add in hardware, fma can be very slow since it must avoid intermediate rounding. math.h defines the symbols FP_FAST_FMA, FP_FAST_FMAF, and FP_FAST_FMAL when the corresponding version of fma is no slower than the expression ‘x*y + z’. In the GNU C Library, this always means the operation is implemented in hardware.
+
+Function: float fadd (double x, double y)
+Function: float faddl (long double x, long double y)
+Function: double daddl (long double x, long double y)
+Function: _FloatM fMaddfN (_FloatN x, _FloatN y)
+Function: _FloatM fMaddfNx (_FloatNx x, _FloatNx y)
+Function: _FloatMx fMxaddfN (_FloatN x, _FloatN y)
+Function: _FloatMx fMxaddfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, return x + y, rounded once to the return type of the function without any intermediate rounding to the type of the arguments.
+
+Function: float fsub (double x, double y)
+Function: float fsubl (long double x, long double y)
+Function: double dsubl (long double x, long double y)
+Function: _FloatM fMsubfN (_FloatN x, _FloatN y)
+Function: _FloatM fMsubfNx (_FloatNx x, _FloatNx y)
+Function: _FloatMx fMxsubfN (_FloatN x, _FloatN y)
+Function: _FloatMx fMxsubfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, return x - y, rounded once to the return type of the function without any intermediate rounding to the type of the arguments.
+
+Function: float fmul (double x, double y)
+Function: float fmull (long double x, long double y)
+Function: double dmull (long double x, long double y)
+Function: _FloatM fMmulfN (_FloatN x, _FloatN y)
+Function: _FloatM fMmulfNx (_FloatNx x, _FloatNx y)
+Function: _FloatMx fMxmulfN (_FloatN x, _FloatN y)
+Function: _FloatMx fMxmulfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, return x * y, rounded once to the return type of the function without any intermediate rounding to the type of the arguments.
+
+Function: float fdiv (double x, double y)
+Function: float fdivl (long double x, long double y)
+Function: double ddivl (long double x, long double y)
+Function: _FloatM fMdivfN (_FloatN x, _FloatN y)
+Function: _FloatM fMdivfNx (_FloatNx x, _FloatNx y)
+Function: _FloatMx fMxdivfN (_FloatN x, _FloatN y)
+Function: _FloatMx fMxdivfNx (_FloatNx x, _FloatNx y)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, return x / y, rounded once to the return type of the function without any intermediate rounding to the type of the arguments.
+
+Function: float fsqrt (double x)
+Function: float fsqrtl (long double x)
+Function: double dsqrtl (long double x)
+Function: _FloatM fMsqrtfN (_FloatN x)
+Function: _FloatM fMsqrtfNx (_FloatNx x)
+Function: _FloatMx fMxsqrtfN (_FloatN x)
+Function: _FloatMx fMxsqrtfNx (_FloatNx x)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, return the square root of x, rounded once to the return type of the function without any intermediate rounding to the type of the arguments.
+
+Function: float ffma (double x, double y, double z)
+Function: float ffmal (long double x, long double y, long double z)
+Function: double dfmal (long double x, long double y, long double z)
+Function: _FloatM fMfmafN (_FloatN x, _FloatN y, _FloatN z)
+Function: _FloatM fMfmafNx (_FloatNx x, _FloatNx y, _FloatNx z)
+Function: _FloatMx fMxfmafN (_FloatN x, _FloatN y, _FloatN z)
+Function: _FloatMx fMxfmafNx (_FloatNx x, _FloatNx y, _FloatNx z)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions, from TS 18661-1:2014 and TS 18661-3:2015, return (x · y) + z, rounded once to the return type of the function without any intermediate rounding to the type of the arguments and without any intermediate rounding of result of the multiplication.
+
+Next: Projections, Conjugates, and Decomposing of Complex Numbers, Previous: Arithmetic Functions, Up: Arithmetic Functions   [Contents][Index]
+
+20.9 Complex Numbers
+ISO C99 introduces support for complex numbers in C. This is done with a new type qualifier, complex. It is a keyword if and only if complex.h has been included. There are three complex types, corresponding to the three real types: float complex, double complex, and long double complex.
+
+Likewise, on machines that have support for _FloatN or _FloatNx enabled, the complex types _FloatN complex and _FloatNx complex are also available if complex.h has been included; see Mathematics.
+
+To construct complex numbers you need a way to indicate the imaginary part of a number. There is no standard notation for an imaginary floating point constant. Instead, complex.h defines two macros that can be used to create complex numbers.
+
+Macro: const float complex _Complex_I
+This macro is a representation of the complex number “0+1i”. Multiplying a real floating-point value by _Complex_I gives a complex number whose value is purely imaginary. You can use this to construct complex constants:
+
+3.0 + 4.0i = 3.0 + 4.0 * _Complex_I
+Note that _Complex_I * _Complex_I has the value -1, but the type of that value is complex.
+
+_Complex_I is a bit of a mouthful. complex.h also defines a shorter name for the same constant.
+
+Macro: const float complex I
+This macro has exactly the same value as _Complex_I. Most of the time it is preferable. However, it causes problems if you want to use the identifier I for something else. You can safely write
+
+#include <complex.h>
+#undef I
+if you need I for your own purposes. (In that case we recommend you also define some other short name for _Complex_I, such as J.)
+
+Next: Parsing of Numbers, Previous: Complex Numbers, Up: Arithmetic Functions   [Contents][Index]
+
+20.10 Projections, Conjugates, and Decomposing of Complex Numbers
+ISO C99 also defines functions that perform basic operations on complex numbers, such as decomposition and conjugation. The prototypes for all these functions are in complex.h. All functions are available in three variants, one for each of the three complex types.
+
+Function: double creal (complex double z)
+Function: float crealf (complex float z)
+Function: long double creall (complex long double z)
+Function: _FloatN crealfN (complex _FloatN z)
+Function: _FloatNx crealfNx (complex _FloatNx z)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return the real part of the complex number z.
+
+Function: double cimag (complex double z)
+Function: float cimagf (complex float z)
+Function: long double cimagl (complex long double z)
+Function: _FloatN cimagfN (complex _FloatN z)
+Function: _FloatNx cimagfNx (complex _FloatNx z)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return the imaginary part of the complex number z.
+
+Function: complex double conj (complex double z)
+Function: complex float conjf (complex float z)
+Function: complex long double conjl (complex long double z)
+Function: complex _FloatN conjfN (complex _FloatN z)
+Function: complex _FloatNx conjfNx (complex _FloatNx z)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+These functions return the conjugate value of the complex number z. The conjugate of a complex number has the same real part and a negated imaginary part. In other words, ‘conj(a + bi) = a + -bi’.
+
+Function: double carg (complex double z)
+Function: float cargf (complex float z)
+Function: long double cargl (complex long double z)
+Function: _FloatN cargfN (complex _FloatN z)

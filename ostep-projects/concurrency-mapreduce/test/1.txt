@@ -1,0 +1,1999 @@
+13.11.2 Getting the Status of AIO Operations
+As already described in the documentation of the functions in the last section, it must be possible to get information about the status of an I/O request. When the operation is performed truly asynchronously (as with aio_read and aio_write and with lio_listio when the mode is LIO_NOWAIT), one sometimes needs to know whether a specific request already terminated and if so, what the result was. The following two functions allow you to get this kind of information.
+
+Function: int aio_error (const struct aiocb *aiocbp)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function determines the error state of the request described by the struct aiocb variable pointed to by aiocbp. If the request has not yet terminated the value returned is always EINPROGRESS. Once the request has terminated the value aio_error returns is either 0 if the request completed successfully or it returns the value which would be stored in the errno variable if the request would have been done using read, write, or fsync.
+
+The function can return ENOSYS if it is not implemented. It could also return EINVAL if the aiocbp parameter does not refer to an asynchronous operation whose return status is not yet known.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is in fact aio_error64 since the LFS interface transparently replaces the normal implementation.
+
+Function: int aio_error64 (const struct aiocb64 *aiocbp)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is similar to aio_error with the only difference that the argument is a reference to a variable of type struct aiocb64.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is available under the name aio_error and so transparently replaces the interface for small files on 32 bit machines.
+
+Function: ssize_t aio_return (struct aiocb *aiocbp)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function can be used to retrieve the return status of the operation carried out by the request described in the variable pointed to by aiocbp. As long as the error status of this request as returned by aio_error is EINPROGRESS the return value of this function is undefined.
+
+Once the request is finished this function can be used exactly once to retrieve the return value. Following calls might lead to undefined behavior. The return value itself is the value which would have been returned by the read, write, or fsync call.
+
+The function can return ENOSYS if it is not implemented. It could also return EINVAL if the aiocbp parameter does not refer to an asynchronous operation whose return status is not yet known.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is in fact aio_return64 since the LFS interface transparently replaces the normal implementation.
+
+Function: ssize_t aio_return64 (struct aiocb64 *aiocbp)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is similar to aio_return with the only difference that the argument is a reference to a variable of type struct aiocb64.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is available under the name aio_return and so transparently replaces the interface for small files on 32 bit machines.
+
+Next: Cancellation of AIO Operations, Previous: Getting the Status of AIO Operations, Up: Perform I/O Operations in Parallel   [Contents][Index]
+
+13.11.3 Getting into a Consistent State
+When dealing with asynchronous operations it is sometimes necessary to get into a consistent state. This would mean for AIO that one wants to know whether a certain request or a group of requests were processed. This could be done by waiting for the notification sent by the system after the operation terminated, but this sometimes would mean wasting resources (mainly computation time). Instead POSIX.1b defines two functions which will help with most kinds of consistency.
+
+The aio_fsync and aio_fsync64 functions are only available if the symbol _POSIX_SYNCHRONIZED_IO is defined in unistd.h.
+
+Function: int aio_fsync (int op, struct aiocb *aiocbp)
+Preliminary: | MT-Safe | AS-Unsafe lock heap | AC-Unsafe lock mem | See POSIX Safety Concepts.
+
+Calling this function forces all I/O operations queued at the time of the function call operating on the file descriptor aiocbp->aio_fildes into the synchronized I/O completion state (see Synchronizing I/O operations). The aio_fsync function returns immediately but the notification through the method described in aiocbp->aio_sigevent will happen only after all requests for this file descriptor have terminated and the file is synchronized. This also means that requests for this very same file descriptor which are queued after the synchronization request are not affected.
+
+If op is O_DSYNC the synchronization happens as with a call to fdatasync. Otherwise op should be O_SYNC and the synchronization happens as with fsync.
+
+As long as the synchronization has not happened, a call to aio_error with the reference to the object pointed to by aiocbp returns EINPROGRESS. Once the synchronization is done aio_error return 0 if the synchronization was not successful. Otherwise the value returned is the value to which the fsync or fdatasync function would have set the errno variable. In this case nothing can be assumed about the consistency of the data written to this file descriptor.
+
+The return value of this function is 0 if the request was successfully enqueued. Otherwise the return value is -1 and errno is set to one of the following values:
+
+EAGAIN
+The request could not be enqueued due to temporary lack of resources.
+
+EBADF
+The file descriptor aiocbp->aio_fildes is not valid.
+
+EINVAL
+The implementation does not support I/O synchronization or the op parameter is other than O_DSYNC and O_SYNC.
+
+ENOSYS
+This function is not implemented.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is in fact aio_fsync64 since the LFS interface transparently replaces the normal implementation.
+
+Function: int aio_fsync64 (int op, struct aiocb64 *aiocbp)
+Preliminary: | MT-Safe | AS-Unsafe lock heap | AC-Unsafe lock mem | See POSIX Safety Concepts.
+
+This function is similar to aio_fsync with the only difference that the argument is a reference to a variable of type struct aiocb64.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is available under the name aio_fsync and so transparently replaces the interface for small files on 32 bit machines.
+
+Another method of synchronization is to wait until one or more requests of a specific set terminated. This could be achieved by the aio_* functions to notify the initiating process about the termination but in some situations this is not the ideal solution. In a program which constantly updates clients somehow connected to the server it is not always the best solution to go round robin since some connections might be slow. On the other hand letting the aio_* functions notify the caller might also be not the best solution since whenever the process works on preparing data for a client it makes no sense to be interrupted by a notification since the new client will not be handled before the current client is served. For situations like this aio_suspend should be used.
+
+Function: int aio_suspend (const struct aiocb *const list[], int nent, const struct timespec *timeout)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | See POSIX Safety Concepts.
+
+When calling this function, the calling thread is suspended until at least one of the requests pointed to by the nent elements of the array list has completed. If any of the requests has already completed at the time aio_suspend is called, the function returns immediately. Whether a request has terminated or not is determined by comparing the error status of the request with EINPROGRESS. If an element of list is NULL, the entry is simply ignored.
+
+If no request has finished, the calling process is suspended. If timeout is NULL, the process is not woken until a request has finished. If timeout is not NULL, the process remains suspended at least as long as specified in timeout. In this case, aio_suspend returns with an error.
+
+The return value of the function is 0 if one or more requests from the list have terminated. Otherwise the function returns -1 and errno is set to one of the following values:
+
+EAGAIN
+None of the requests from the list completed in the time specified by timeout.
+
+EINTR
+A signal interrupted the aio_suspend function. This signal might also be sent by the AIO implementation while signalling the termination of one of the requests.
+
+ENOSYS
+The aio_suspend function is not implemented.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is in fact aio_suspend64 since the LFS interface transparently replaces the normal implementation.
+
+Function: int aio_suspend64 (const struct aiocb64 *const list[], int nent, const struct timespec *timeout)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | See POSIX Safety Concepts.
+
+This function is similar to aio_suspend with the only difference that the argument is a reference to a variable of type struct aiocb64.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is available under the name aio_suspend and so transparently replaces the interface for small files on 32 bit machines.
+
+Next: How to optimize the AIO implementation, Previous: Getting into a Consistent State, Up: Perform I/O Operations in Parallel   [Contents][Index]
+
+13.11.4 Cancellation of AIO Operations
+When one or more requests are asynchronously processed, it might be useful in some situations to cancel a selected operation, e.g., if it becomes obvious that the written data is no longer accurate and would have to be overwritten soon. As an example, assume an application, which writes data in files in a situation where new incoming data would have to be written in a file which will be updated by an enqueued request. The POSIX AIO implementation provides such a function, but this function is not capable of forcing the cancellation of the request. It is up to the implementation to decide whether it is possible to cancel the operation or not. Therefore using this function is merely a hint.
+
+Function: int aio_cancel (int fildes, struct aiocb *aiocbp)
+Preliminary: | MT-Safe | AS-Unsafe lock heap | AC-Unsafe lock mem | See POSIX Safety Concepts.
+
+The aio_cancel function can be used to cancel one or more outstanding requests. If the aiocbp parameter is NULL, the function tries to cancel all of the outstanding requests which would process the file descriptor fildes (i.e., whose aio_fildes member is fildes). If aiocbp is not NULL, aio_cancel attempts to cancel the specific request pointed to by aiocbp.
+
+For requests which were successfully canceled, the normal notification about the termination of the request should take place. I.e., depending on the struct sigevent object which controls this, nothing happens, a signal is sent or a thread is started. If the request cannot be canceled, it terminates the usual way after performing the operation.
+
+After a request is successfully canceled, a call to aio_error with a reference to this request as the parameter will return ECANCELED and a call to aio_return will return -1. If the request wasn’t canceled and is still running the error status is still EINPROGRESS.
+
+The return value of the function is AIO_CANCELED if there were requests which haven’t terminated and which were successfully canceled. If there is one or more requests left which couldn’t be canceled, the return value is AIO_NOTCANCELED. In this case aio_error must be used to find out which of the, perhaps multiple, requests (if aiocbp is NULL) weren’t successfully canceled. If all requests already terminated at the time aio_cancel is called the return value is AIO_ALLDONE.
+
+If an error occurred during the execution of aio_cancel the function returns -1 and sets errno to one of the following values.
+
+EBADF
+The file descriptor fildes is not valid.
+
+ENOSYS
+aio_cancel is not implemented.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64, this function is in fact aio_cancel64 since the LFS interface transparently replaces the normal implementation.
+
+Function: int aio_cancel64 (int fildes, struct aiocb64 *aiocbp)
+Preliminary: | MT-Safe | AS-Unsafe lock heap | AC-Unsafe lock mem | See POSIX Safety Concepts.
+
+This function is similar to aio_cancel with the only difference that the argument is a reference to a variable of type struct aiocb64.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64, this function is available under the name aio_cancel and so transparently replaces the interface for small files on 32 bit machines.
+
+Previous: Cancellation of AIO Operations, Up: Perform I/O Operations in Parallel   [Contents][Index]
+
+13.11.5 How to optimize the AIO implementation
+The POSIX standard does not specify how the AIO functions are implemented. They could be system calls, but it is also possible to emulate them at userlevel.
+
+At the time of writing, the available implementation is a user-level implementation which uses threads for handling the enqueued requests. While this implementation requires making some decisions about limitations, hard limitations are something best avoided in the GNU C Library. Therefore, the GNU C Library provides a means for tuning the AIO implementation according to the individual use.
+
+Data Type: struct aioinit
+This data type is used to pass the configuration or tunable parameters to the implementation. The program has to initialize the members of this struct and pass it to the implementation using the aio_init function.
+
+int aio_threads
+This member specifies the maximal number of threads which may be used at any one time.
+
+int aio_num
+This number provides an estimate on the maximal number of simultaneously enqueued requests.
+
+int aio_locks
+Unused.
+
+int aio_usedba
+Unused.
+
+int aio_debug
+Unused.
+
+int aio_numusers
+Unused.
+
+int aio_reserved[2]
+Unused.
+
+Function: void aio_init (const struct aioinit *init)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | See POSIX Safety Concepts.
+
+This function must be called before any other AIO function. Calling it is completely voluntary, as it is only meant to help the AIO implementation perform better.
+
+Before calling aio_init, the members of a variable of type struct aioinit must be initialized. Then a reference to this variable is passed as the parameter to aio_init which itself may or may not pay attention to the hints.
+
+The function has no return value and no error cases are defined. It is an extension which follows a proposal from the SGI implementation in Irix 6. It is not covered by POSIX.1b or Unix98.
+
+Next: Duplicating Descriptors, Previous: Perform I/O Operations in Parallel, Up: Low-Level Input/Output   [Contents][Index]
+
+13.12 Control Operations on Files
+This section describes how you can perform various other operations on file descriptors, such as inquiring about or setting flags describing the status of the file descriptor, manipulating record locks, and the like. All of these operations are performed by the function fcntl.
+
+The second argument to the fcntl function is a command that specifies which operation to perform. The function and macros that name various flags that are used with it are declared in the header file fcntl.h. Many of these flags are also used by the open function; see Opening and Closing Files.
+
+Function: int fcntl (int filedes, int command, …)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fcntl function performs the operation specified by command on the file descriptor filedes. Some commands require additional arguments to be supplied. These additional arguments and the return value and error conditions are given in the detailed descriptions of the individual commands.
+
+Briefly, here is a list of what the various commands are.
+
+F_DUPFD
+Duplicate the file descriptor (return another file descriptor pointing to the same open file). See Duplicating Descriptors.
+
+F_GETFD
+Get flags associated with the file descriptor. See File Descriptor Flags.
+
+F_SETFD
+Set flags associated with the file descriptor. See File Descriptor Flags.
+
+F_GETFL
+Get flags associated with the open file. See File Status Flags.
+
+F_SETFL
+Set flags associated with the open file. See File Status Flags.
+
+F_GETLK
+Test a file lock. See File Locks.
+
+F_SETLK
+Set or clear a file lock. See File Locks.
+
+F_SETLKW
+Like F_SETLK, but wait for completion. See File Locks.
+
+F_OFD_GETLK
+Test an open file description lock. See Open File Description Locks. Specific to Linux.
+
+F_OFD_SETLK
+Set or clear an open file description lock. See Open File Description Locks. Specific to Linux.
+
+F_OFD_SETLKW
+Like F_OFD_SETLK, but block until lock is acquired. See Open File Description Locks. Specific to Linux.
+
+F_GETOWN
+Get process or process group ID to receive SIGIO signals. See Interrupt-Driven Input.
+
+F_SETOWN
+Set process or process group ID to receive SIGIO signals. See Interrupt-Driven Input.
+
+This function is a cancellation point in multi-threaded programs for the commands F_SETLKW (and the LFS analogous F_SETLKW64) and F_OFD_SETLKW. This is a problem if the thread allocates some resources (like memory, file descriptors, semaphores or whatever) at the time fcntl is called. If the thread gets canceled these resources stay allocated until the program ends. To avoid this calls to fcntl should be protected using cancellation handlers.
+
+Next: File Descriptor Flags, Previous: Control Operations on Files, Up: Low-Level Input/Output   [Contents][Index]
+
+13.13 Duplicating Descriptors
+You can duplicate a file descriptor, or allocate another file descriptor that refers to the same open file as the original. Duplicate descriptors share one file position and one set of file status flags (see File Status Flags), but each has its own set of file descriptor flags (see File Descriptor Flags).
+
+The major use of duplicating a file descriptor is to implement redirection of input or output: that is, to change the file or pipe that a particular file descriptor corresponds to.
+
+You can perform this operation using the fcntl function with the F_DUPFD command, but there are also convenient functions dup and dup2 for duplicating descriptors.
+
+The fcntl function and flags are declared in fcntl.h, while prototypes for dup and dup2 are in the header file unistd.h.
+
+Function: int dup (int old)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function copies descriptor old to the first available descriptor number (the first number not currently open). It is equivalent to fcntl (old, F_DUPFD, 0).
+
+Function: int dup2 (int old, int new)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function copies the descriptor old to descriptor number new.
+
+If old is an invalid descriptor, then dup2 does nothing; it does not close new. Otherwise, the new duplicate of old replaces any previous meaning of descriptor new, as if new were closed first.
+
+If old and new are different numbers, and old is a valid descriptor number, then dup2 is equivalent to:
+
+close (new);
+fcntl (old, F_DUPFD, new)
+However, dup2 does this atomically; there is no instant in the middle of calling dup2 at which new is closed and not yet a duplicate of old.
+
+Macro: int F_DUPFD
+This macro is used as the command argument to fcntl, to copy the file descriptor given as the first argument.
+
+The form of the call in this case is:
+
+fcntl (old, F_DUPFD, next-filedes)
+The next-filedes argument is of type int and specifies that the file descriptor returned should be the next available one greater than or equal to this value.
+
+The return value from fcntl with this command is normally the value of the new file descriptor. A return value of -1 indicates an error. The following errno error conditions are defined for this command:
+
+EBADF
+The old argument is invalid.
+
+EINVAL
+The next-filedes argument is invalid.
+
+EMFILE
+There are no more file descriptors available—your program is already using the maximum. In BSD and GNU, the maximum is controlled by a resource limit that can be changed; see Limiting Resource Usage, for more information about the RLIMIT_NOFILE limit.
+
+ENFILE is not a possible error code for dup2 because dup2 does not create a new opening of a file; duplicate descriptors do not count toward the limit which ENFILE indicates. EMFILE is possible because it refers to the limit on distinct descriptor numbers in use in one process.
+
+Here is an example showing how to use dup2 to do redirection. Typically, redirection of the standard streams (like stdin) is done by a shell or shell-like program before calling one of the exec functions (see Executing a File) to execute a new program in a child process. When the new program is executed, it creates and initializes the standard streams to point to the corresponding file descriptors, before its main function is invoked.
+
+So, to redirect standard input to a file, the shell could do something like:
+
+pid = fork ();
+if (pid == 0)
+  {
+    char *filename;
+    char *program;
+    int file;
+    …
+    file = TEMP_FAILURE_RETRY (open (filename, O_RDONLY));
+    dup2 (file, STDIN_FILENO);
+    TEMP_FAILURE_RETRY (close (file));
+    execv (program, NULL);
+  }
+There is also a more detailed example showing how to implement redirection in the context of a pipeline of processes in Launching Jobs.
+
+Next: File Status Flags, Previous: Duplicating Descriptors, Up: Low-Level Input/Output   [Contents][Index]
+
+13.14 File Descriptor Flags
+File descriptor flags are miscellaneous attributes of a file descriptor. These flags are associated with particular file descriptors, so that if you have created duplicate file descriptors from a single opening of a file, each descriptor has its own set of flags.
+
+Currently there is just one file descriptor flag: FD_CLOEXEC, which causes the descriptor to be closed if you use any of the exec… functions (see Executing a File).
+
+The symbols in this section are defined in the header file fcntl.h.
+
+Macro: int F_GETFD
+This macro is used as the command argument to fcntl, to specify that it should return the file descriptor flags associated with the filedes argument.
+
+The normal return value from fcntl with this command is a nonnegative number which can be interpreted as the bitwise OR of the individual flags (except that currently there is only one flag to use).
+
+In case of an error, fcntl returns -1. The following errno error conditions are defined for this command:
+
+EBADF
+The filedes argument is invalid.
+
+Macro: int F_SETFD
+This macro is used as the command argument to fcntl, to specify that it should set the file descriptor flags associated with the filedes argument. This requires a third int argument to specify the new flags, so the form of the call is:
+
+fcntl (filedes, F_SETFD, new-flags)
+The normal return value from fcntl with this command is an unspecified value other than -1, which indicates an error. The flags and error conditions are the same as for the F_GETFD command.
+
+The following macro is defined for use as a file descriptor flag with the fcntl function. The value is an integer constant usable as a bit mask value.
+
+Macro: int FD_CLOEXEC
+This flag specifies that the file descriptor should be closed when an exec function is invoked; see Executing a File. When a file descriptor is allocated (as with open or dup), this bit is initially cleared on the new file descriptor, meaning that descriptor will survive into the new program after exec.
+
+If you want to modify the file descriptor flags, you should get the current flags with F_GETFD and modify the value. Don’t assume that the flags listed here are the only ones that are implemented; your program may be run years from now and more flags may exist then. For example, here is a function to set or clear the flag FD_CLOEXEC without altering any other flags:
+
+/* Set the FD_CLOEXEC flag of desc if value is nonzero,
+   or clear the flag if value is 0.
+   Return 0 on success, or -1 on error with errno set. */
+
+int
+set_cloexec_flag (int desc, int value)
+{
+  int oldflags = fcntl (desc, F_GETFD, 0);
+  /* If reading the flags failed, return error indication now. */
+  if (oldflags < 0)
+    return oldflags;
+  /* Set just the flag we want to set. */
+  if (value != 0)
+    oldflags |= FD_CLOEXEC;
+  else
+    oldflags &= ~FD_CLOEXEC;
+  /* Store modified flag word in the descriptor. */
+  return fcntl (desc, F_SETFD, oldflags);
+}
+Next: File Locks, Previous: File Descriptor Flags, Up: Low-Level Input/Output   [Contents][Index]
+
+13.15 File Status Flags
+File status flags are used to specify attributes of the opening of a file. Unlike the file descriptor flags discussed in File Descriptor Flags, the file status flags are shared by duplicated file descriptors resulting from a single opening of the file. The file status flags are specified with the flags argument to open; see Opening and Closing Files.
+
+File status flags fall into three categories, which are described in the following sections.
+
+File Access Modes, specify what type of access is allowed to the file: reading, writing, or both. They are set by open and are returned by fcntl, but cannot be changed.
+Open-time Flags, control details of what open will do. These flags are not preserved after the open call.
+I/O Operating Modes, affect how operations such as read and write are done. They are set by open, and can be fetched or changed with fcntl.
+The symbols in this section are defined in the header file fcntl.h.
+
+File Access Modes
+Open-time Flags
+I/O Operating Modes
+Getting and Setting File Status Flags
+Next: Open-time Flags, Up: File Status Flags   [Contents][Index]
+
+13.15.1 File Access Modes
+The file access mode allows a file descriptor to be used for reading, writing, both, or neither. The access mode is determined when the file is opened, and never change.
+
+Macro: int O_RDONLY
+Open the file for read access.
+
+Macro: int O_WRONLY
+Open the file for write access.
+
+Macro: int O_RDWR
+Open the file for both reading and writing.
+
+Macro: int O_PATH
+Obtain a file descriptor for the file, but do not open the file for reading or writing. Permission checks for the file itself are skipped when the file is opened (but permission to access the directory that contains it is still needed), and permissions are checked when the descriptor is used later on.
+
+For example, such descriptors can be used with the fexecve function (see Executing a File).
+
+This access mode is specific to Linux. On GNU/Hurd systems, it is possible to use O_EXEC explicitly, or specify no access modes at all (see below).
+
+The portable file access modes O_RDONLY, O_WRONLY, and O_RDWR may not correspond to individual bits. To determine the file access mode with fcntl, you must extract the access mode bits from the retrieved file status flags, using the O_ACCMODE mask.
+
+Macro: int O_ACCMODE
+This macro is a mask that can be bitwise-ANDed with the file status flag value to recover the file access mode, assuming that a standard file access mode is in use.
+
+If a non-standard file access mode is used (such as O_PATH or O_EXEC), masking with O_ACCMODE may give incorrect results. These non-standard access modes are identified by individual bits and have to be checked directly (without masking with O_ACCMODE first).
+
+On GNU/Hurd systems (but not on other systems), O_RDONLY and O_WRONLY are independent bits that can be bitwise-ORed together, and it is valid for either bit to be set or clear. This means that O_RDWR is the same as O_RDONLY|O_WRONLY. A file access mode of zero is permissible; it allows no operations that do input or output to the file, but does allow other operations such as fchmod. On GNU/Hurd systems, since “read-only” or “write-only” is a misnomer, fcntl.h defines additional names for the file access modes.
+
+Macro: int O_READ
+Open the file for reading. Same as O_RDONLY; only defined on GNU/Hurd.
+
+Macro: int O_WRITE
+Open the file for writing. Same as O_WRONLY; only defined on GNU/Hurd.
+
+Macro: int O_EXEC
+Open the file for executing. Only defined on GNU/Hurd.
+
+Next: I/O Operating Modes, Previous: File Access Modes, Up: File Status Flags   [Contents][Index]
+
+13.15.2 Open-time Flags
+The open-time flags specify options affecting how open will behave. These options are not preserved once the file is open. The exception to this is O_NONBLOCK, which is also an I/O operating mode and so it is saved. See Opening and Closing Files, for how to call open.
+
+There are two sorts of options specified by open-time flags.
+
+File name translation flags affect how open looks up the file name to locate the file, and whether the file can be created.
+Open-time action flags specify extra operations that open will perform on the file once it is open.
+Here are the file name translation flags.
+
+Macro: int O_CREAT
+If set, the file will be created if it doesn’t already exist.
+
+Macro: int O_EXCL
+If both O_CREAT and O_EXCL are set, then open fails if the specified file already exists. This is guaranteed to never clobber an existing file.
+
+The O_EXCL flag has a special meaning in combination with O_TMPFILE; see below.
+
+Macro: int O_DIRECTORY
+If set, the open operation fails if the given name is not the name of a directory. The errno variable is set to ENOTDIR for this error condition.
+
+Macro: int O_NOFOLLOW
+If set, the open operation fails if the final component of the file name refers to a symbolic link. The errno variable is set to ELOOP for this error condition.
+
+Macro: int O_TMPFILE
+If this flag is specified, functions in the open family create an unnamed temporary file. In this case, the pathname argument to the open family of functions (see Opening and Closing Files) is interpreted as the directory in which the temporary file is created (thus determining the file system which provides the storage for the file). The O_TMPFILE flag must be combined with O_WRONLY or O_RDWR, and the mode argument is required.
+
+The temporary file can later be given a name using linkat, turning it into a regular file. This allows the atomic creation of a file with the specific file attributes (mode and extended attributes) and file contents. If, for security reasons, it is not desirable that a name can be given to the file, the O_EXCL flag can be specified along with O_TMPFILE.
+
+Not all kernels support this open flag. If this flag is unsupported, an attempt to create an unnamed temporary file fails with an error of EINVAL. If the underlying file system does not support the O_TMPFILE flag, an EOPNOTSUPP error is the result.
+
+The O_TMPFILE flag is a GNU extension.
+
+Macro: int O_NONBLOCK
+This prevents open from blocking for a “long time” to open the file. This is only meaningful for some kinds of files, usually devices such as serial ports; when it is not meaningful, it is harmless and ignored. Often, opening a port to a modem blocks until the modem reports carrier detection; if O_NONBLOCK is specified, open will return immediately without a carrier.
+
+Note that the O_NONBLOCK flag is overloaded as both an I/O operating mode and a file name translation flag. This means that specifying O_NONBLOCK in open also sets nonblocking I/O mode; see I/O Operating Modes. To open the file without blocking but do normal I/O that blocks, you must call open with O_NONBLOCK set and then call fcntl to turn the bit off.
+
+Macro: int O_NOCTTY
+If the named file is a terminal device, don’t make it the controlling terminal for the process. See Job Control, for information about what it means to be the controlling terminal.
+
+On GNU/Hurd systems and 4.4 BSD, opening a file never makes it the controlling terminal and O_NOCTTY is zero. However, GNU/Linux systems and some other systems use a nonzero value for O_NOCTTY and set the controlling terminal when you open a file that is a terminal device; so to be portable, use O_NOCTTY when it is important to avoid this.
+
+The following three file name translation flags exist only on GNU/Hurd systems.
+
+Macro: int O_IGNORE_CTTY
+Do not recognize the named file as the controlling terminal, even if it refers to the process’s existing controlling terminal device. Operations on the new file descriptor will never induce job control signals. See Job Control.
+
+Macro: int O_NOLINK
+If the named file is a symbolic link, open the link itself instead of the file it refers to. (fstat on the new file descriptor will return the information returned by lstat on the link’s name.)
+
+Macro: int O_NOTRANS
+If the named file is specially translated, do not invoke the translator. Open the bare file the translator itself sees.
+
+The open-time action flags tell open to do additional operations which are not really related to opening the file. The reason to do them as part of open instead of in separate calls is that open can do them atomically.
+
+Macro: int O_TRUNC
+Truncate the file to zero length. This option is only useful for regular files, not special files such as directories or FIFOs. POSIX.1 requires that you open the file for writing to use O_TRUNC. In BSD and GNU you must have permission to write the file to truncate it, but you need not open for write access.
+
+This is the only open-time action flag specified by POSIX.1. There is no good reason for truncation to be done by open, instead of by calling ftruncate afterwards. The O_TRUNC flag existed in Unix before ftruncate was invented, and is retained for backward compatibility.
+
+The remaining operating modes are BSD extensions. They exist only on some systems. On other systems, these macros are not defined.
+
+Macro: int O_SHLOCK
+Acquire a shared lock on the file, as with flock. See File Locks.
+
+If O_CREAT is specified, the locking is done atomically when creating the file. You are guaranteed that no other process will get the lock on the new file first.
+
+Macro: int O_EXLOCK
+Acquire an exclusive lock on the file, as with flock. See File Locks. This is atomic like O_SHLOCK.
+
+Next: Getting and Setting File Status Flags, Previous: Open-time Flags, Up: File Status Flags   [Contents][Index]
+
+13.15.3 I/O Operating Modes
+The operating modes affect how input and output operations using a file descriptor work. These flags are set by open and can be fetched and changed with fcntl.
+
+Macro: int O_APPEND
+The bit that enables append mode for the file. If set, then all write operations write the data at the end of the file, extending it, regardless of the current file position. This is the only reliable way to append to a file. In append mode, you are guaranteed that the data you write will always go to the current end of the file, regardless of other processes writing to the file. Conversely, if you simply set the file position to the end of file and write, then another process can extend the file after you set the file position but before you write, resulting in your data appearing someplace before the real end of file.
+
+Macro: int O_NONBLOCK
+The bit that enables nonblocking mode for the file. If this bit is set, read requests on the file can return immediately with a failure status if there is no input immediately available, instead of blocking. Likewise, write requests can also return immediately with a failure status if the output can’t be written immediately.
+
+Note that the O_NONBLOCK flag is overloaded as both an I/O operating mode and a file name translation flag; see Open-time Flags.
+
+Macro: int O_NDELAY
+This is an obsolete name for O_NONBLOCK, provided for compatibility with BSD. It is not defined by the POSIX.1 standard.
+
+The remaining operating modes are BSD and GNU extensions. They exist only on some systems. On other systems, these macros are not defined.
+
+Macro: int O_ASYNC
+The bit that enables asynchronous input mode. If set, then SIGIO signals will be generated when input is available. See Interrupt-Driven Input.
+
+Asynchronous input mode is a BSD feature.
+
+Macro: int O_FSYNC
+The bit that enables synchronous writing for the file. If set, each write call will make sure the data is reliably stored on disk before returning.
+
+Synchronous writing is a BSD feature.
+
+Macro: int O_SYNC
+This is another name for O_FSYNC. They have the same value.
+
+Macro: int O_NOATIME
+If this bit is set, read will not update the access time of the file. See File Times. This is used by programs that do backups, so that backing a file up does not count as reading it. Only the owner of the file or the superuser may use this bit.
+
+This is a GNU extension.
+
+Previous: I/O Operating Modes, Up: File Status Flags   [Contents][Index]
+
+13.15.4 Getting and Setting File Status Flags
+The fcntl function can fetch or change file status flags.
+
+Macro: int F_GETFL
+This macro is used as the command argument to fcntl, to read the file status flags for the open file with descriptor filedes.
+
+The normal return value from fcntl with this command is a nonnegative number which can be interpreted as the bitwise OR of the individual flags. Since the file access modes are not single-bit values, you can mask off other bits in the returned flags with O_ACCMODE to compare them.
+
+In case of an error, fcntl returns -1. The following errno error conditions are defined for this command:
+
+EBADF
+The filedes argument is invalid.
+
+Macro: int F_SETFL
+This macro is used as the command argument to fcntl, to set the file status flags for the open file corresponding to the filedes argument. This command requires a third int argument to specify the new flags, so the call looks like this:
+
+fcntl (filedes, F_SETFL, new-flags)
+You can’t change the access mode for the file in this way; that is, whether the file descriptor was opened for reading or writing.
+
+The normal return value from fcntl with this command is an unspecified value other than -1, which indicates an error. The error conditions are the same as for the F_GETFL command.
+
+If you want to modify the file status flags, you should get the current flags with F_GETFL and modify the value. Don’t assume that the flags listed here are the only ones that are implemented; your program may be run years from now and more flags may exist then. For example, here is a function to set or clear the flag O_NONBLOCK without altering any other flags:
+
+/* Set the O_NONBLOCK flag of desc if value is nonzero,
+   or clear the flag if value is 0.
+   Return 0 on success, or -1 on error with errno set. */
+
+int
+set_nonblock_flag (int desc, int value)
+{
+  int oldflags = fcntl (desc, F_GETFL, 0);
+  /* If reading the flags failed, return error indication now. */
+  if (oldflags == -1)
+    return -1;
+  /* Set just the flag we want to set. */
+  if (value != 0)
+    oldflags |= O_NONBLOCK;
+  else
+    oldflags &= ~O_NONBLOCK;
+  /* Store modified flag word in the descriptor. */
+  return fcntl (desc, F_SETFL, oldflags);
+}
+Next: Open File Description Locks, Previous: File Status Flags, Up: Low-Level Input/Output   [Contents][Index]
+
+13.16 File Locks
+This section describes record locks that are associated with the process. There is also a different type of record lock that is associated with the open file description instead of the process. See Open File Description Locks.
+
+The remaining fcntl commands are used to support record locking, which permits multiple cooperating programs to prevent each other from simultaneously accessing parts of a file in error-prone ways.
+
+An exclusive or write lock gives a process exclusive access for writing to the specified part of the file. While a write lock is in place, no other process can lock that part of the file.
+
+A shared or read lock prohibits any other process from requesting a write lock on the specified part of the file. However, other processes can request read locks.
+
+The read and write functions do not actually check to see whether there are any locks in place. If you want to implement a locking protocol for a file shared by multiple processes, your application must do explicit fcntl calls to request and clear locks at the appropriate points.
+
+Locks are associated with processes. A process can only have one kind of lock set for each byte of a given file. When any file descriptor for that file is closed by the process, all of the locks that process holds on that file are released, even if the locks were made using other descriptors that remain open. Likewise, locks are released when a process exits, and are not inherited by child processes created using fork (see Creating a Process).
+
+When making a lock, use a struct flock to specify what kind of lock and where. This data type and the associated macros for the fcntl function are declared in the header file fcntl.h.
+
+Data Type: struct flock
+This structure is used with the fcntl function to describe a file lock. It has these members:
+
+short int l_type
+Specifies the type of the lock; one of F_RDLCK, F_WRLCK, or F_UNLCK.
+
+short int l_whence
+This corresponds to the whence argument to fseek or lseek, and specifies what the offset is relative to. Its value can be one of SEEK_SET, SEEK_CUR, or SEEK_END.
+
+off_t l_start
+This specifies the offset of the start of the region to which the lock applies, and is given in bytes relative to the point specified by the l_whence member.
+
+off_t l_len
+This specifies the length of the region to be locked. A value of 0 is treated specially; it means the region extends to the end of the file.
+
+pid_t l_pid
+This field is the process ID (see Process Creation Concepts) of the process holding the lock. It is filled in by calling fcntl with the F_GETLK command, but is ignored when making a lock. If the conflicting lock is an open file description lock (see Open File Description Locks), then this field will be set to -1.
+
+Macro: int F_GETLK
+This macro is used as the command argument to fcntl, to specify that it should get information about a lock. This command requires a third argument of type struct flock * to be passed to fcntl, so that the form of the call is:
+
+fcntl (filedes, F_GETLK, lockp)
+If there is a lock already in place that would block the lock described by the lockp argument, information about that lock overwrites *lockp. Existing locks are not reported if they are compatible with making a new lock as specified. Thus, you should specify a lock type of F_WRLCK if you want to find out about both read and write locks, or F_RDLCK if you want to find out about write locks only.
+
+There might be more than one lock affecting the region specified by the lockp argument, but fcntl only returns information about one of them. The l_whence member of the lockp structure is set to SEEK_SET and the l_start and l_len fields set to identify the locked region.
+
+If no lock applies, the only change to the lockp structure is to update the l_type to a value of F_UNLCK.
+
+The normal return value from fcntl with this command is an unspecified value other than -1, which is reserved to indicate an error. The following errno error conditions are defined for this command:
+
+EBADF
+The filedes argument is invalid.
+
+EINVAL
+Either the lockp argument doesn’t specify valid lock information, or the file associated with filedes doesn’t support locks.
+
+Macro: int F_SETLK
+This macro is used as the command argument to fcntl, to specify that it should set or clear a lock. This command requires a third argument of type struct flock * to be passed to fcntl, so that the form of the call is:
+
+fcntl (filedes, F_SETLK, lockp)
+If the process already has a lock on any part of the region, the old lock on that part is replaced with the new lock. You can remove a lock by specifying a lock type of F_UNLCK.
+
+If the lock cannot be set, fcntl returns immediately with a value of -1. This function does not block while waiting for other processes to release locks. If fcntl succeeds, it returns a value other than -1.
+
+The following errno error conditions are defined for this function:
+
+EAGAIN
+EACCES
+The lock cannot be set because it is blocked by an existing lock on the file. Some systems use EAGAIN in this case, and other systems use EACCES; your program should treat them alike, after F_SETLK. (GNU/Linux and GNU/Hurd systems always use EAGAIN.)
+
+EBADF
+Either: the filedes argument is invalid; you requested a read lock but the filedes is not open for read access; or, you requested a write lock but the filedes is not open for write access.
+
+EINVAL
+Either the lockp argument doesn’t specify valid lock information, or the file associated with filedes doesn’t support locks.
+
+ENOLCK
+The system has run out of file lock resources; there are already too many file locks in place.
+
+Well-designed file systems never report this error, because they have no limitation on the number of locks. However, you must still take account of the possibility of this error, as it could result from network access to a file system on another machine.
+
+Macro: int F_SETLKW
+This macro is used as the command argument to fcntl, to specify that it should set or clear a lock. It is just like the F_SETLK command, but causes the process to block (or wait) until the request can be specified.
+
+This command requires a third argument of type struct flock *, as for the F_SETLK command.
+
+The fcntl return values and errors are the same as for the F_SETLK command, but these additional errno error conditions are defined for this command:
+
+EINTR
+The function was interrupted by a signal while it was waiting. See Primitives Interrupted by Signals.
+
+EDEADLK
+The specified region is being locked by another process. But that process is waiting to lock a region which the current process has locked, so waiting for the lock would result in deadlock. The system does not guarantee that it will detect all such conditions, but it lets you know if it notices one.
+
+The following macros are defined for use as values for the l_type member of the flock structure. The values are integer constants.
+
+F_RDLCK
+This macro is used to specify a read (or shared) lock.
+
+F_WRLCK
+This macro is used to specify a write (or exclusive) lock.
+
+F_UNLCK
+This macro is used to specify that the region is unlocked.
+
+As an example of a situation where file locking is useful, consider a program that can be run simultaneously by several different users, that logs status information to a common file. One example of such a program might be a game that uses a file to keep track of high scores. Another example might be a program that records usage or accounting information for billing purposes.
+
+Having multiple copies of the program simultaneously writing to the file could cause the contents of the file to become mixed up. But you can prevent this kind of problem by setting a write lock on the file before actually writing to the file.
+
+If the program also needs to read the file and wants to make sure that the contents of the file are in a consistent state, then it can also use a read lock. While the read lock is set, no other process can lock that part of the file for writing.
+
+Remember that file locks are only an advisory protocol for controlling access to a file. There is still potential for access to the file by programs that don’t use the lock protocol.
+
+Next: Open File Description Locks Example, Previous: File Locks, Up: Low-Level Input/Output   [Contents][Index]
+
+13.17 Open File Description Locks
+In contrast to process-associated record locks (see File Locks), open file description record locks are associated with an open file description rather than a process.
+
+Using fcntl to apply an open file description lock on a region that already has an existing open file description lock that was created via the same file descriptor will never cause a lock conflict.
+
+Open file description locks are also inherited by child processes across fork, or clone with CLONE_FILES set (see Creating a Process), along with the file descriptor.
+
+It is important to distinguish between the open file description (an instance of an open file, usually created by a call to open) and an open file descriptor, which is a numeric value that refers to the open file description. The locks described here are associated with the open file description and not the open file descriptor.
+
+Using dup (see Duplicating Descriptors) to copy a file descriptor does not give you a new open file description, but rather copies a reference to an existing open file description and assigns it to a new file descriptor. Thus, open file description locks set on a file descriptor cloned by dup will never conflict with open file description locks set on the original descriptor since they refer to the same open file description. Depending on the range and type of lock involved, the original lock may be modified by a F_OFD_SETLK or F_OFD_SETLKW command in this situation however.
+
+Open file description locks always conflict with process-associated locks, even if acquired by the same process or on the same open file descriptor.
+
+Open file description locks use the same struct flock as process-associated locks as an argument (see File Locks) and the macros for the command values are also declared in the header file fcntl.h. To use them, the macro _GNU_SOURCE must be defined prior to including any header file.
+
+In contrast to process-associated locks, any struct flock used as an argument to open file description lock commands must have the l_pid value set to 0. Also, when returning information about an open file description lock in a F_GETLK or F_OFD_GETLK request, the l_pid field in struct flock will be set to -1 to indicate that the lock is not associated with a process.
+
+When the same struct flock is reused as an argument to a F_OFD_SETLK or F_OFD_SETLKW request after being used for an F_OFD_GETLK request, it is necessary to inspect and reset the l_pid field to 0.
+
+Macro: int F_OFD_GETLK
+This macro is used as the command argument to fcntl, to specify that it should get information about a lock. This command requires a third argument of type struct flock * to be passed to fcntl, so that the form of the call is:
+
+fcntl (filedes, F_OFD_GETLK, lockp)
+If there is a lock already in place that would block the lock described by the lockp argument, information about that lock is written to *lockp. Existing locks are not reported if they are compatible with making a new lock as specified. Thus, you should specify a lock type of F_WRLCK if you want to find out about both read and write locks, or F_RDLCK if you want to find out about write locks only.
+
+There might be more than one lock affecting the region specified by the lockp argument, but fcntl only returns information about one of them. Which lock is returned in this situation is undefined.
+
+The l_whence member of the lockp structure are set to SEEK_SET and the l_start and l_len fields are set to identify the locked region.
+
+If no conflicting lock exists, the only change to the lockp structure is to update the l_type field to the value F_UNLCK.
+
+The normal return value from fcntl with this command is either 0 on success or -1, which indicates an error. The following errno error conditions are defined for this command:
+
+EBADF
+The filedes argument is invalid.
+
+EINVAL
+Either the lockp argument doesn’t specify valid lock information, the operating system kernel doesn’t support open file description locks, or the file associated with filedes doesn’t support locks.
+
+Macro: int F_OFD_SETLK
+This macro is used as the command argument to fcntl, to specify that it should set or clear a lock. This command requires a third argument of type struct flock * to be passed to fcntl, so that the form of the call is:
+
+fcntl (filedes, F_OFD_SETLK, lockp)
+If the open file already has a lock on any part of the region, the old lock on that part is replaced with the new lock. You can remove a lock by specifying a lock type of F_UNLCK.
+
+If the lock cannot be set, fcntl returns immediately with a value of -1. This command does not wait for other tasks to release locks. If fcntl succeeds, it returns 0.
+
+The following errno error conditions are defined for this command:
+
+EAGAIN
+The lock cannot be set because it is blocked by an existing lock on the file.
+
+EBADF
+Either: the filedes argument is invalid; you requested a read lock but the filedes is not open for read access; or, you requested a write lock but the filedes is not open for write access.
+
+EINVAL
+Either the lockp argument doesn’t specify valid lock information, the operating system kernel doesn’t support open file description locks, or the file associated with filedes doesn’t support locks.
+
+ENOLCK
+The system has run out of file lock resources; there are already too many file locks in place.
+
+Well-designed file systems never report this error, because they have no limitation on the number of locks. However, you must still take account of the possibility of this error, as it could result from network access to a file system on another machine.
+
+Macro: int F_OFD_SETLKW
+This macro is used as the command argument to fcntl, to specify that it should set or clear a lock. It is just like the F_OFD_SETLK command, but causes the process to wait until the request can be completed.
+
+This command requires a third argument of type struct flock *, as for the F_OFD_SETLK command.
+
+The fcntl return values and errors are the same as for the F_OFD_SETLK command, but these additional errno error conditions are defined for this command:
+
+EINTR
+The function was interrupted by a signal while it was waiting. See Primitives Interrupted by Signals.
+
+Open file description locks are useful in the same sorts of situations as process-associated locks. They can also be used to synchronize file access between threads within the same process by having each thread perform its own open of the file, to obtain its own open file description.
+
+Because open file description locks are automatically freed only upon closing the last file descriptor that refers to the open file description, this locking mechanism avoids the possibility that locks are inadvertently released due to a library routine opening and closing a file without the application being aware.
+
+As with process-associated locks, open file description locks are advisory.
+
+Next: Interrupt-Driven Input, Previous: Open File Description Locks, Up: Low-Level Input/Output   [Contents][Index]
+
+13.18 Open File Description Locks Example
+Here is an example of using open file description locks in a threaded program. If this program used process-associated locks, then it would be subject to data corruption because process-associated locks are shared by the threads inside a process, and thus cannot be used by one thread to lock out another thread in the same process.
+
+Proper error handling has been omitted in the following program for brevity.
+
+
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <pthread.h>
+
+#define FILENAME        "/tmp/foo"
+#define NUM_THREADS     3
+#define ITERATIONS      5
+
+void *
+thread_start (void *arg)
+{
+  int i, fd, len;
+  long tid = (long) arg;
+  char buf[256];
+  struct flock lck = {
+    .l_whence = SEEK_SET,
+    .l_start = 0,
+    .l_len = 1,
+  };
+
+  fd = open ("/tmp/foo", O_RDWR | O_CREAT, 0666);
+
+  for (i = 0; i < ITERATIONS; i++)
+    {
+      lck.l_type = F_WRLCK;
+      fcntl (fd, F_OFD_SETLKW, &lck);
+
+      len = sprintf (buf, "%d: tid=%ld fd=%d\n", i, tid, fd);
+
+      lseek (fd, 0, SEEK_END);
+      write (fd, buf, len);
+      fsync (fd);
+
+      lck.l_type = F_UNLCK;
+      fcntl (fd, F_OFD_SETLK, &lck);
+
+      /* sleep to ensure lock is yielded to another thread */
+      usleep (1);
+    }
+  pthread_exit (NULL);
+}
+
+int
+main (int argc, char **argv)
+{
+  long i;
+  pthread_t threads[NUM_THREADS];
+
+  truncate (FILENAME, 0);
+
+  for (i = 0; i < NUM_THREADS; i++)
+    pthread_create (&threads[i], NULL, thread_start, (void *) i);
+
+  pthread_exit (NULL);
+  return 0;
+}
+This example creates three threads each of which loops five times, appending to the file. Access to the file is serialized via open file description locks. If we compile and run the above program, we’ll end up with /tmp/foo that has 15 lines in it.
+
+If we, however, were to replace the F_OFD_SETLK and F_OFD_SETLKW commands with their process-associated lock equivalents, the locking essentially becomes a noop since it is all done within the context of the same process. That leads to data corruption (typically manifested as missing lines) as some threads race in and overwrite the data written by others.
+
+Next: Generic I/O Control operations, Previous: Open File Description Locks Example, Up: Low-Level Input/Output   [Contents][Index]
+
+13.19 Interrupt-Driven Input
+If you set the O_ASYNC status flag on a file descriptor (see File Status Flags), a SIGIO signal is sent whenever input or output becomes possible on that file descriptor. The process or process group to receive the signal can be selected by using the F_SETOWN command to the fcntl function. If the file descriptor is a socket, this also selects the recipient of SIGURG signals that are delivered when out-of-band data arrives on that socket; see Out-of-Band Data. (SIGURG is sent in any situation where select would report the socket as having an “exceptional condition”. See Waiting for Input or Output.)
+
+If the file descriptor corresponds to a terminal device, then SIGIO signals are sent to the foreground process group of the terminal. See Job Control.
+
+The symbols in this section are defined in the header file fcntl.h.
+
+Macro: int F_GETOWN
+This macro is used as the command argument to fcntl, to specify that it should get information about the process or process group to which SIGIO signals are sent. (For a terminal, this is actually the foreground process group ID, which you can get using tcgetpgrp; see Functions for Controlling Terminal Access.)
+
+The return value is interpreted as a process ID; if negative, its absolute value is the process group ID.
+
+The following errno error condition is defined for this command:
+
+EBADF
+The filedes argument is invalid.
+
+Macro: int F_SETOWN
+This macro is used as the command argument to fcntl, to specify that it should set the process or process group to which SIGIO signals are sent. This command requires a third argument of type pid_t to be passed to fcntl, so that the form of the call is:
+
+fcntl (filedes, F_SETOWN, pid)
+The pid argument should be a process ID. You can also pass a negative number whose absolute value is a process group ID.
+
+The return value from fcntl with this command is -1 in case of error and some other value if successful. The following errno error conditions are defined for this command:
+
+EBADF
+The filedes argument is invalid.
+
+ESRCH
+There is no process or process group corresponding to pid.
+
+Previous: Interrupt-Driven Input, Up: Low-Level Input/Output   [Contents][Index]
+
+13.20 Generic I/O Control operations
+GNU systems can handle most input/output operations on many different devices and objects in terms of a few file primitives - read, write and lseek. However, most devices also have a few peculiar operations which do not fit into this model. Such as:
+
+Changing the character font used on a terminal.
+Telling a magnetic tape system to rewind or fast forward. (Since they cannot move in byte increments, lseek is inapplicable).
+Ejecting a disk from a drive.
+Playing an audio track from a CD-ROM drive.
+Maintaining routing tables for a network.
+Although some such objects such as sockets and terminals 3 have special functions of their own, it would not be practical to create functions for all these cases.
+
+Instead these minor operations, known as IOCTLs, are assigned code numbers and multiplexed through the ioctl function, defined in sys/ioctl.h. The code numbers themselves are defined in many different headers.
+
+Function: int ioctl (int filedes, int command, …)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The ioctl function performs the generic I/O operation command on filedes.
+
+A third argument is usually present, either a single number or a pointer to a structure. The meaning of this argument, the returned value, and any error codes depends upon the command used. Often -1 is returned for a failure.
+
+On some systems, IOCTLs used by different devices share the same numbers. Thus, although use of an inappropriate IOCTL usually only produces an error, you should not attempt to use device-specific IOCTLs on an unknown device.
+
+Most IOCTLs are OS-specific and/or only used in special system utilities, and are thus beyond the scope of this document. For an example of the use of an IOCTL, see Out-of-Band Data.
+
+Next: Pipes and FIFOs, Previous: Low-Level Input/Output, Up: Main Menu   [Contents][Index]
+
+14 File System Interface
+This chapter describes the GNU C Library’s functions for manipulating files. Unlike the input and output functions (see Input/Output on Streams; see Low-Level Input/Output), these functions are concerned with operating on the files themselves rather than on their contents.
+
+Among the facilities described in this chapter are functions for examining or modifying directories, functions for renaming and deleting files, and functions for examining and setting file attributes such as access permissions and modification times.
+
+Working Directory
+Accessing Directories
+Working with Directory Trees
+Hard Links
+Symbolic Links
+Deleting Files
+Renaming Files
+Creating Directories
+File Attributes
+Making Special Files
+Temporary Files
+Next: Accessing Directories, Up: File System Interface   [Contents][Index]
+
+14.1 Working Directory
+Each process has associated with it a directory, called its current working directory or simply working directory, that is used in the resolution of relative file names (see File Name Resolution).
+
+When you log in and begin a new session, your working directory is initially set to the home directory associated with your login account in the system user database. You can find any user’s home directory using the getpwuid or getpwnam functions; see User Database.
+
+Users can change the working directory using shell commands like cd. The functions described in this section are the primitives used by those commands and by other programs for examining and changing the working directory.
+
+Prototypes for these functions are declared in the header file unistd.h.
+
+Function: char * getcwd (char *buffer, size_t size)
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+The getcwd function returns an absolute file name representing the current working directory, storing it in the character array buffer that you provide. The size argument is how you tell the system the allocation size of buffer.
+
+The GNU C Library version of this function also permits you to specify a null pointer for the buffer argument. Then getcwd allocates a buffer automatically, as with malloc (see Unconstrained Allocation). If the size is greater than zero, then the buffer is that large; otherwise, the buffer is as large as necessary to hold the result.
+
+The return value is buffer on success and a null pointer on failure. The following errno error conditions are defined for this function:
+
+EINVAL
+The size argument is zero and buffer is not a null pointer.
+
+ERANGE
+The size argument is less than the length of the working directory name. You need to allocate a bigger array and try again.
+
+EACCES
+Permission to read or search a component of the file name was denied.
+
+You could implement the behavior of GNU’s getcwd (NULL, 0) using only the standard behavior of getcwd:
+
+char *
+gnu_getcwd ()
+{
+  size_t size = 100;
+
+  while (1)
+    {
+      char *buffer = (char *) xmalloc (size);
+      if (getcwd (buffer, size) == buffer)
+        return buffer;
+      free (buffer);
+      if (errno != ERANGE)
+        return 0;
+      size *= 2;
+    }
+}
+See Examples of malloc, for information about xmalloc, which is not a library function but is a customary name used in most GNU software.
+
+Deprecated Function: char * getwd (char *buffer)
+Preliminary: | MT-Safe | AS-Unsafe heap i18n | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+This is similar to getcwd, but has no way to specify the size of the buffer. The GNU C Library provides getwd only for backwards compatibility with BSD.
+
+The buffer argument should be a pointer to an array at least PATH_MAX bytes long (see Limits on File System Capacity). On GNU/Hurd systems there is no limit to the size of a file name, so this is not necessarily enough space to contain the directory name. That is why this function is deprecated.
+
+Function: char * get_current_dir_name (void)
+Preliminary: | MT-Safe env | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+The get_current_dir_name function is basically equivalent to getcwd (NULL, 0), except the value of the PWD environment variable is first examined, and if it does in fact correspond to the current directory, that value is returned. This is a subtle difference which is visible if the path described by the value in PWD is using one or more symbolic links, in which case the value returned by getcwd would resolve the symbolic links and therefore yield a different result.
+
+This function is a GNU extension.
+
+Function: int chdir (const char *filename)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is used to set the process’s working directory to filename.
+
+The normal, successful return value from chdir is 0. A value of -1 is returned to indicate an error. The errno error conditions defined for this function are the usual file name syntax errors (see File Name Errors), plus ENOTDIR if the file filename is not a directory.
+
+Function: int fchdir (int filedes)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is used to set the process’s working directory to directory associated with the file descriptor filedes.
+
+The normal, successful return value from fchdir is 0. A value of -1 is returned to indicate an error. The following errno error conditions are defined for this function:
+
+EACCES
+Read permission is denied for the directory named by dirname.
+
+EBADF
+The filedes argument is not a valid file descriptor.
+
+ENOTDIR
+The file descriptor filedes is not associated with a directory.
+
+EINTR
+The function call was interrupt by a signal.
+
+EIO
+An I/O error occurred.
+
+Next: Working with Directory Trees, Previous: Working Directory, Up: File System Interface   [Contents][Index]
+
+14.2 Accessing Directories
+The facilities described in this section let you read the contents of a directory file. This is useful if you want your program to list all the files in a directory, perhaps as part of a menu.
+
+The opendir function opens a directory stream whose elements are directory entries. Alternatively fdopendir can be used which can have advantages if the program needs to have more control over the way the directory is opened for reading. This allows, for instance, to pass the O_NOATIME flag to open.
+
+You use the readdir function on the directory stream to retrieve these entries, represented as struct dirent objects. The name of the file for each entry is stored in the d_name member of this structure. There are obvious parallels here to the stream facilities for ordinary files, described in Input/Output on Streams.
+
+Format of a Directory Entry
+Opening a Directory Stream
+Reading and Closing a Directory Stream
+Simple Program to List a Directory
+Random Access in a Directory Stream
+Scanning the Content of a Directory
+Simple Program to List a Directory, Mark II
+Low-level Directory Access
+Next: Opening a Directory Stream, Up: Accessing Directories   [Contents][Index]
+
+14.2.1 Format of a Directory Entry
+This section describes what you find in a single directory entry, as you might obtain it from a directory stream. All the symbols are declared in the header file dirent.h.
+
+Data Type: struct dirent
+This is a structure type used to return information about directory entries. It contains the following fields:
+
+char d_name[]
+This is the null-terminated file name component. This is the only field you can count on in all POSIX systems.
+
+ino_t d_fileno
+This is the file serial number. For BSD compatibility, you can also refer to this member as d_ino. On GNU/Linux and GNU/Hurd systems and most POSIX systems, for most files this the same as the st_ino member that stat will return for the file. See File Attributes.
+
+unsigned char d_namlen
+This is the length of the file name, not including the terminating null character. Its type is unsigned char because that is the integer type of the appropriate size. This member is a BSD extension. The symbol _DIRENT_HAVE_D_NAMLEN is defined if this member is available.
+
+unsigned char d_type
+This is the type of the file, possibly unknown. The following constants are defined for its value:
+
+DT_UNKNOWN
+The type is unknown. Only some filesystems have full support to return the type of the file, others might always return this value.
+
+DT_REG
+A regular file.
+
+DT_DIR
+A directory.
+
+DT_FIFO
+A named pipe, or FIFO. See FIFO Special Files.
+
+DT_SOCK
+A local-domain socket.
+
+DT_CHR
+A character device.
+
+DT_BLK
+A block device.
+
+DT_LNK
+A symbolic link.
+
+This member is a BSD extension. The symbol _DIRENT_HAVE_D_TYPE is defined if this member is available. On systems where it is used, it corresponds to the file type bits in the st_mode member of struct stat. If the value cannot be determined the member value is DT_UNKNOWN. These two macros convert between d_type values and st_mode values:
+
+Function: int IFTODT (mode_t mode)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This returns the d_type value corresponding to mode.
+
+Function: mode_t DTTOIF (int dtype)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This returns the st_mode value corresponding to dtype.
+
+This structure may contain additional members in the future. Their availability is always announced in the compilation environment by a macro named _DIRENT_HAVE_D_xxx where xxx is replaced by the name of the new member. For instance, the member d_reclen available on some systems is announced through the macro _DIRENT_HAVE_D_RECLEN.
+
+When a file has multiple names, each name has its own directory entry. The only way you can tell that the directory entries belong to a single file is that they have the same value for the d_fileno field.
+
+File attributes such as size, modification times etc., are part of the file itself, not of any particular directory entry. See File Attributes.
+
+Next: Reading and Closing a Directory Stream, Previous: Format of a Directory Entry, Up: Accessing Directories   [Contents][Index]
+
+14.2.2 Opening a Directory Stream
+This section describes how to open a directory stream. All the symbols are declared in the header file dirent.h.
+
+Data Type: DIR
+The DIR data type represents a directory stream.
+
+You shouldn’t ever allocate objects of the struct dirent or DIR data types, since the directory access functions do that for you. Instead, you refer to these objects using the pointers returned by the following functions.
+
+Directory streams are a high-level interface. On Linux, alternative interfaces for accessing directories using file descriptors are available. See Low-level Directory Access.
+
+Function: DIR * opendir (const char *dirname)
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+The opendir function opens and returns a directory stream for reading the directory whose file name is dirname. The stream has type DIR *.
+
+If unsuccessful, opendir returns a null pointer. In addition to the usual file name errors (see File Name Errors), the following errno error conditions are defined for this function:
+
+EACCES
+Read permission is denied for the directory named by dirname.
+
+EMFILE
+The process has too many files open.
+
+ENFILE
+The entire system, or perhaps the file system which contains the directory, cannot support any additional open files at the moment. (This problem cannot happen on GNU/Hurd systems.)
+
+ENOMEM
+Not enough memory available.
+
+The DIR type is typically implemented using a file descriptor, and the opendir function in terms of the open function. See Low-Level Input/Output. Directory streams and the underlying file descriptors are closed on exec (see Executing a File).
+
+The directory which is opened for reading by opendir is identified by the name. In some situations this is not sufficient. Or the way opendir implicitly creates a file descriptor for the directory is not the way a program might want it. In these cases an alternative interface can be used.
+
+Function: DIR * fdopendir (int fd)
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+The fdopendir function works just like opendir but instead of taking a file name and opening a file descriptor for the directory the caller is required to provide a file descriptor. This file descriptor is then used in subsequent uses of the returned directory stream object.
+
+The caller must make sure the file descriptor is associated with a directory and it allows reading.
+
+If the fdopendir call returns successfully the file descriptor is now under the control of the system. It can be used in the same way the descriptor implicitly created by opendir can be used but the program must not close the descriptor.
+
+In case the function is unsuccessful it returns a null pointer and the file descriptor remains to be usable by the program. The following errno error conditions are defined for this function:
+
+EBADF
+The file descriptor is not valid.
+
+ENOTDIR
+The file descriptor is not associated with a directory.
+
+EINVAL
+The descriptor does not allow reading the directory content.
+
+ENOMEM
+Not enough memory available.
+
+In some situations it can be desirable to get hold of the file descriptor which is created by the opendir call. For instance, to switch the current working directory to the directory just read the fchdir function could be used. Historically the DIR type was exposed and programs could access the fields. This does not happen in the GNU C Library. Instead a separate function is provided to allow access.
+
+Function: int dirfd (DIR *dirstream)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The function dirfd returns the file descriptor associated with the directory stream dirstream. This descriptor can be used until the directory is closed with closedir. If the directory stream implementation is not using file descriptors the return value is -1.
+
+Next: Simple Program to List a Directory, Previous: Opening a Directory Stream, Up: Accessing Directories   [Contents][Index]
+
+14.2.3 Reading and Closing a Directory Stream
+This section describes how to read directory entries from a directory stream, and how to close the stream when you are done with it. All the symbols are declared in the header file dirent.h.
+
+Function: struct dirent * readdir (DIR *dirstream)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | See POSIX Safety Concepts.
+
+This function reads the next entry from the directory. It normally returns a pointer to a structure containing information about the file. This structure is associated with the dirstream handle and can be rewritten by a subsequent call.
+
+Portability Note: On some systems readdir may not return entries for . and .., even though these are always valid file names in any directory. See File Name Resolution.
+
+If there are no more entries in the directory or an error is detected, readdir returns a null pointer. The following errno error conditions are defined for this function:
+
+EBADF
+The dirstream argument is not valid.
+
+To distinguish between an end-of-directory condition or an error, you must set errno to zero before calling readdir. To avoid entering an infinite loop, you should stop reading from the directory after the first error.
+
+Caution: The pointer returned by readdir points to a buffer within the DIR object. The data in that buffer will be overwritten by the next call to readdir. You must take care, for instance, to copy the d_name string if you need it later.
+
+Because of this, it is not safe to share a DIR object among multiple threads, unless you use your own locking to ensure that no thread calls readdir while another thread is still using the data from the previous call. In the GNU C Library, it is safe to call readdir from multiple threads as long as each thread uses its own DIR object. POSIX.1-2008 does not require this to be safe, but we are not aware of any operating systems where it does not work.
+
+readdir_r allows you to provide your own buffer for the struct dirent, but it is less portable than readdir, and has problems with very long filenames (see below). We recommend you use readdir, but do not share DIR objects.
+
+Function: int readdir_r (DIR *dirstream, struct dirent *entry, struct dirent **result)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | See POSIX Safety Concepts.
+
+This function is a version of readdir which performs internal locking. Like readdir it returns the next entry from the directory. To prevent conflicts between simultaneously running threads the result is stored inside the entry object.
+
+Portability Note: readdir_r is deprecated. It is recommended to use readdir instead of readdir_r for the following reasons:
+
+On systems which do not define NAME_MAX, it may not be possible to use readdir_r safely because the caller does not specify the length of the buffer for the directory entry.
+On some systems, readdir_r cannot read directory entries with very long names. If such a name is encountered, the GNU C Library implementation of readdir_r returns with an error code of ENAMETOOLONG after the final directory entry has been read. On other systems, readdir_r may return successfully, but the d_name member may not be NUL-terminated or may be truncated.
+POSIX-1.2008 does not guarantee that readdir is thread-safe, even when access to the same dirstream is serialized. But in current implementations (including the GNU C Library), it is safe to call readdir concurrently on different dirstreams, so there is no need to use readdir_r in most multi-threaded programs. In the rare case that multiple threads need to read from the same dirstream, it is still better to use readdir and external synchronization.
+It is expected that future versions of POSIX will obsolete readdir_r and mandate the level of thread safety for readdir which is provided by the GNU C Library and other implementations today.
+Normally readdir_r returns zero and sets *result to entry. If there are no more entries in the directory or an error is detected, readdir_r sets *result to a null pointer and returns a nonzero error code, also stored in errno, as described for readdir.
+
+It is also important to look at the definition of the struct dirent type. Simply passing a pointer to an object of this type for the second parameter of readdir_r might not be enough. Some systems don’t define the d_name element sufficiently long. In this case the user has to provide additional space. There must be room for at least NAME_MAX + 1 characters in the d_name array. Code to call readdir_r could look like this:
+
+  union
+  {
+    struct dirent d;
+    char b[offsetof (struct dirent, d_name) + NAME_MAX + 1];
+  } u;
+
+  if (readdir_r (dir, &u.d, &res) == 0)
+    …
+To support large filesystems on 32-bit machines there are LFS variants of the last two functions.
+
+Function: struct dirent64 * readdir64 (DIR *dirstream)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | See POSIX Safety Concepts.
+
+The readdir64 function is just like the readdir function except that it returns a pointer to a record of type struct dirent64. Some of the members of this data type (notably d_ino) might have a different size to allow large filesystems.
+
+In all other aspects this function is equivalent to readdir.
+
+Function: int readdir64_r (DIR *dirstream, struct dirent64 *entry, struct dirent64 **result)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | See POSIX Safety Concepts.
+
+The deprecated readdir64_r function is equivalent to the readdir_r function except that it takes parameters of base type struct dirent64 instead of struct dirent in the second and third position. The same precautions mentioned in the documentation of readdir_r also apply here.
+
+Function: int closedir (DIR *dirstream)
+Preliminary: | MT-Safe | AS-Unsafe heap lock/hurd | AC-Unsafe mem fd lock/hurd | See POSIX Safety Concepts.
+
+This function closes the directory stream dirstream. It returns 0 on success and -1 on failure.
+
+The following errno error conditions are defined for this function:
+
+EBADF
+The dirstream argument is not valid.
+
+Next: Random Access in a Directory Stream, Previous: Reading and Closing a Directory Stream, Up: Accessing Directories   [Contents][Index]
+
+14.2.4 Simple Program to List a Directory
+Here’s a simple program that prints the names of the files in the current working directory:
+
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <dirent.h>
+
+int
+main (void)
+{
+  DIR *dp;
+  struct dirent *ep;
+
+  dp = opendir ("./");
+  if (dp != NULL)
+    {
+      while (ep = readdir (dp))
+        puts (ep->d_name);
+      (void) closedir (dp);
+    }
+  else
+    perror ("Couldn't open the directory");
+
+  return 0;
+}
+The order in which files appear in a directory tends to be fairly random. A more useful program would sort the entries (perhaps by alphabetizing them) before printing them; see Scanning the Content of a Directory, and Array Sort Function.
+
+Next: Scanning the Content of a Directory, Previous: Simple Program to List a Directory, Up: Accessing Directories   [Contents][Index]
+
+14.2.5 Random Access in a Directory Stream
+This section describes how to reread parts of a directory that you have already read from an open directory stream. All the symbols are declared in the header file dirent.h.
+
+Function: void rewinddir (DIR *dirstream)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock | See POSIX Safety Concepts.
+
+The rewinddir function is used to reinitialize the directory stream dirstream, so that if you call readdir it returns information about the first entry in the directory again. This function also notices if files have been added or removed to the directory since it was opened with opendir. (Entries for these files might or might not be returned by readdir if they were added or removed since you last called opendir or rewinddir.)
+
+Function: long int telldir (DIR *dirstream)
+Preliminary: | MT-Safe | AS-Unsafe heap/bsd lock/bsd | AC-Unsafe mem/bsd lock/bsd | See POSIX Safety Concepts.
+
+The telldir function returns the file position of the directory stream dirstream. You can use this value with seekdir to restore the directory stream to that position.
+
+Function: void seekdir (DIR *dirstream, long int pos)
+Preliminary: | MT-Safe | AS-Unsafe heap/bsd lock/bsd | AC-Unsafe mem/bsd lock/bsd | See POSIX Safety Concepts.
+
+The seekdir function sets the file position of the directory stream dirstream to pos. The value pos must be the result of a previous call to telldir on this particular stream; closing and reopening the directory can invalidate values returned by telldir.
+
+Next: Simple Program to List a Directory, Mark II, Previous: Random Access in a Directory Stream, Up: Accessing Directories   [Contents][Index]
+
+14.2.6 Scanning the Content of a Directory
+A higher-level interface to the directory handling functions is the scandir function. With its help one can select a subset of the entries in a directory, possibly sort them and get a list of names as the result.
+
+Function: int scandir (const char *dir, struct dirent ***namelist, int (*selector) (const struct dirent *), int (*cmp) (const struct dirent **, const struct dirent **))
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+The scandir function scans the contents of the directory selected by dir. The result in *namelist is an array of pointers to structures of type struct dirent which describe all selected directory entries and which is allocated using malloc. Instead of always getting all directory entries returned, the user supplied function selector can be used to decide which entries are in the result. Only the entries for which selector returns a non-zero value are selected.
+
+Finally the entries in *namelist are sorted using the user-supplied function cmp. The arguments passed to the cmp function are of type struct dirent **, therefore one cannot directly use the strcmp or strcoll functions; instead see the functions alphasort and versionsort below.
+
+The return value of the function is the number of entries placed in *namelist. If it is -1 an error occurred (either the directory could not be opened for reading or memory allocation failed) and the global variable errno contains more information on the error.
+
+As described above, the fourth argument to the scandir function must be a pointer to a sorting function. For the convenience of the programmer the GNU C Library contains implementations of functions which are very helpful for this purpose.
+
+Function: int alphasort (const struct dirent **a, const struct dirent **b)
+Preliminary: | MT-Safe locale | AS-Unsafe heap | AC-Unsafe mem | See POSIX Safety Concepts.
+
+The alphasort function behaves like the strcoll function (see String/Array Comparison). The difference is that the arguments are not string pointers but instead they are of type struct dirent **.
+
+The return value of alphasort is less than, equal to, or greater than zero depending on the order of the two entries a and b.
+
+Function: int versionsort (const struct dirent **a, const struct dirent **b)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The versionsort function is like alphasort except that it uses the strverscmp function internally.
+
+If the filesystem supports large files we cannot use the scandir anymore since the dirent structure might not able to contain all the information. The LFS provides the new type struct dirent64. To use this we need a new function.
+
+Function: int scandir64 (const char *dir, struct dirent64 ***namelist, int (*selector) (const struct dirent64 *), int (*cmp) (const struct dirent64 **, const struct dirent64 **))
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+The scandir64 function works like the scandir function except that the directory entries it returns are described by elements of type struct dirent64. The function pointed to by selector is again used to select the desired entries, except that selector now must point to a function which takes a struct dirent64 * parameter.
+
+Similarly the cmp function should expect its two arguments to be of type struct dirent64 **.
+
+As cmp is now a function of a different type, the functions alphasort and versionsort cannot be supplied for that argument. Instead we provide the two replacement functions below.
+
+Function: int alphasort64 (const struct dirent64 **a, const struct dirent **b)
+Preliminary: | MT-Safe locale | AS-Unsafe heap | AC-Unsafe mem | See POSIX Safety Concepts.
+
+The alphasort64 function behaves like the strcoll function (see String/Array Comparison). The difference is that the arguments are not string pointers but instead they are of type struct dirent64 **.
+
+Return value of alphasort64 is less than, equal to, or greater than zero depending on the order of the two entries a and b.
+
+Function: int versionsort64 (const struct dirent64 **a, const struct dirent64 **b)
+Preliminary: | MT-Safe locale | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The versionsort64 function is like alphasort64, excepted that it uses the strverscmp function internally.
+
+It is important not to mix the use of scandir and the 64-bit comparison functions or vice versa. There are systems on which this works but on others it will fail miserably.
+
+Next: Low-level Directory Access, Previous: Scanning the Content of a Directory, Up: Accessing Directories   [Contents][Index]
+
+14.2.7 Simple Program to List a Directory, Mark II
+Here is a revised version of the directory lister found above (see Simple Program to List a Directory). Using the scandir function we can avoid the functions which work directly with the directory contents. After the call the returned entries are available for direct use.
+
+
+#include <stdio.h>
+#include <dirent.h>
+
+static int
+one (const struct dirent *unused)
+{
+  return 1;
+}
+
+int
+main (void)
+{
+  struct dirent **eps;
+  int n;
+
+  n = scandir ("./", &eps, one, alphasort);
+  if (n >= 0)
+    {
+      int cnt;
+      for (cnt = 0; cnt < n; ++cnt)
+        puts (eps[cnt]->d_name);
+    }
+  else
+    perror ("Couldn't open the directory");
+
+  return 0;
+}
+Note the simple selector function in this example. Since we want to see all directory entries we always return 1.
+
+Previous: Simple Program to List a Directory, Mark II, Up: Accessing Directories   [Contents][Index]
+
+14.2.8 Low-level Directory Access
+The stream-based directory functions are not AS-Safe and cannot be used after vfork. See POSIX Safety Concepts. The functions below provide an alternative that can be used in these contexts.
+
+Directory data is obtained from a file descriptor, as created by the open function, with or without the O_DIRECTORY flag. See Opening and Closing Files.
+
+Function: ssize_t getdents64 (int fd, void *buffer, size_t length)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The getdents64 function reads at most length bytes of directory entry data from the file descriptor fd and stores it into the byte array starting at buffer.
+
+On success, the function returns the number of bytes written to the buffer. This number is zero if fd is already at the end of the directory stream. On error, the function returns -1 and sets errno to the appropriate error code.
+
+The data is stored as a sequence of struct dirent64 records, which can be traversed using the d_reclen member. The buffer should be large enough to hold the largest possible directory entry. Note that some file systems support file names longer than NAME_MAX bytes (e.g., because they support up to 255 Unicode characters), so a buffer size of at least 1024 is recommended.
+
+This function is specific to Linux.
+
+Next: Hard Links, Previous: Accessing Directories, Up: File System Interface   [Contents][Index]
+
+14.3 Working with Directory Trees
+The functions described so far for handling the files in a directory have allowed you to either retrieve the information bit by bit, or to process all the files as a group (see scandir). Sometimes it is useful to process whole hierarchies of directories and their contained files. The X/Open specification defines two functions to do this. The simpler form is derived from an early definition in System V systems and therefore this function is available on SVID-derived systems. The prototypes and required definitions can be found in the ftw.h header.
+
+There are four functions in this family: ftw, nftw and their 64-bit counterparts ftw64 and nftw64. These functions take as one of their arguments a pointer to a callback function of the appropriate type.
+
+Data Type: __ftw_func_t
+int (*) (const char *, const struct stat *, int)
+The type of callback functions given to the ftw function. The first parameter points to the file name, the second parameter to an object of type struct stat which is filled in for the file named in the first parameter.
+
+The last parameter is a flag giving more information about the current file. It can have the following values:
+
+FTW_F
+The item is either a normal file or a file which does not fit into one of the following categories. This could be special files, sockets etc.
+
+FTW_D
+The item is a directory.
+
+FTW_NS
+The stat call failed and so the information pointed to by the second parameter is invalid.
+
+FTW_DNR
+The item is a directory which cannot be read.
+
+FTW_SL
+The item is a symbolic link. Since symbolic links are normally followed seeing this value in a ftw callback function means the referenced file does not exist. The situation for nftw is different.
+
+This value is only available if the program is compiled with _XOPEN_EXTENDED defined before including the first header. The original SVID systems do not have symbolic links.
+
+If the sources are compiled with _FILE_OFFSET_BITS == 64 this type is in fact __ftw64_func_t since this mode changes struct stat to be struct stat64.
+
+For the LFS interface and for use in the function ftw64, the header ftw.h defines another function type.
+
+Data Type: __ftw64_func_t
+int (*) (const char *, const struct stat64 *, int)
+This type is used just like __ftw_func_t for the callback function, but this time is called from ftw64. The second parameter to the function is a pointer to a variable of type struct stat64 which is able to represent the larger values.
+
+Data Type: __nftw_func_t
+int (*) (const char *, const struct stat *, int, struct FTW *)
+The first three arguments are the same as for the __ftw_func_t type. However for the third argument some additional values are defined to allow finer differentiation:
+
+FTW_DP
+The current item is a directory and all subdirectories have already been visited and reported. This flag is returned instead of FTW_D if the FTW_DEPTH flag is passed to nftw (see below).
+
+FTW_SLN
+The current item is a stale symbolic link. The file it points to does not exist.
+
+The last parameter of the callback function is a pointer to a structure with some extra information as described below.
+
+If the sources are compiled with _FILE_OFFSET_BITS == 64 this type is in fact __nftw64_func_t since this mode changes struct stat to be struct stat64.
+
+For the LFS interface there is also a variant of this data type available which has to be used with the nftw64 function.
+
+Data Type: __nftw64_func_t
+int (*) (const char *, const struct stat64 *, int, struct FTW *)
+This type is used just like __nftw_func_t for the callback function, but this time is called from nftw64. The second parameter to the function is this time a pointer to a variable of type struct stat64 which is able to represent the larger values.
+
+Data Type: struct FTW
+The information contained in this structure helps in interpreting the name parameter and gives some information about the current state of the traversal of the directory hierarchy.
+
+int base
+The value is the offset into the string passed in the first parameter to the callback function of the beginning of the file name. The rest of the string is the path of the file. This information is especially important if the FTW_CHDIR flag was set in calling nftw since then the current directory is the one the current item is found in.
+
+int level
+Whilst processing, the code tracks how many directories down it has gone to find the current file. This nesting level starts at 0 for files in the initial directory (or is zero for the initial file if a file was passed).
+
+Function: int ftw (const char *filename, __ftw_func_t func, int descriptors)
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+The ftw function calls the callback function given in the parameter func for every item which is found in the directory specified by filename and all directories below. The function follows symbolic links if necessary but does not process an item twice. If filename is not a directory then it itself is the only object returned to the callback function.
+
+The file name passed to the callback function is constructed by taking the filename parameter and appending the names of all passed directories and then the local file name. So the callback function can use this parameter to access the file. ftw also calls stat for the file and passes that information on to the callback function. If this stat call is not successful the failure is indicated by setting the third argument of the callback function to FTW_NS. Otherwise it is set according to the description given in the account of __ftw_func_t above.
+
+The callback function is expected to return 0 to indicate that no error occurred and that processing should continue. If an error occurred in the callback function or it wants ftw to return immediately, the callback function can return a value other than 0. This is the only correct way to stop the function. The program must not use setjmp or similar techniques to continue from another place. This would leave resources allocated by the ftw function unfreed.
+
+The descriptors parameter to ftw specifies how many file descriptors it is allowed to consume. The function runs faster the more descriptors it can use. For each level in the directory hierarchy at most one descriptor is used, but for very deep ones any limit on open file descriptors for the process or the system may be exceeded. Moreover, file descriptor limits in a multi-threaded program apply to all the threads as a group, and therefore it is a good idea to supply a reasonable limit to the number of open descriptors.
+
+The return value of the ftw function is 0 if all callback function calls returned 0 and all actions performed by the ftw succeeded. If a function call failed (other than calling stat on an item) the function returns -1. If a callback function returns a value other than 0 this value is returned as the return value of ftw.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 on a 32-bit system this function is in fact ftw64, i.e., the LFS interface transparently replaces the old interface.
+
+Function: int ftw64 (const char *filename, __ftw64_func_t func, int descriptors)
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+This function is similar to ftw but it can work on filesystems with large files. File information is reported using a variable of type struct stat64 which is passed by reference to the callback function.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 on a 32-bit system this function is available under the name ftw and transparently replaces the old implementation.
+
+Function: int nftw (const char *filename, __nftw_func_t func, int descriptors, int flag)
+Preliminary: | MT-Safe cwd | AS-Unsafe heap | AC-Unsafe mem fd cwd | See POSIX Safety Concepts.
+
+The nftw function works like the ftw functions. They call the callback function func for all items found in the directory filename and below. At most descriptors file descriptors are consumed during the nftw call.
+
+One difference is that the callback function is of a different type. It is of type struct FTW * and provides the callback function with the extra information described above.
+
+A second difference is that nftw takes a fourth argument, which is 0 or a bitwise-OR combination of any of the following values.
+
+FTW_PHYS
+While traversing the directory symbolic links are not followed. Instead symbolic links are reported using the FTW_SL value for the type parameter to the callback function. If the file referenced by a symbolic link does not exist FTW_SLN is returned instead.
+
+FTW_MOUNT
+The callback function is only called for items which are on the same mounted filesystem as the directory given by the filename parameter to nftw.
+
+FTW_CHDIR
+If this flag is given the current working directory is changed to the directory of the reported object before the callback function is called. When ntfw finally returns the current directory is restored to its original value.
+
+FTW_DEPTH
+If this option is specified then all subdirectories and files within them are processed before processing the top directory itself (depth-first processing). This also means the type flag given to the callback function is FTW_DP and not FTW_D.
+
+FTW_ACTIONRETVAL
+If this option is specified then return values from callbacks are handled differently. If the callback returns FTW_CONTINUE, walking continues normally. FTW_STOP means walking stops and FTW_STOP is returned to the caller. If FTW_SKIP_SUBTREE is returned by the callback with FTW_D argument, the subtree is skipped and walking continues with next sibling of the directory. If FTW_SKIP_SIBLINGS is returned by the callback, all siblings of the current entry are skipped and walking continues in its parent. No other return values should be returned from the callbacks if this option is set. This option is a GNU extension.
+
+The return value is computed in the same way as for ftw. nftw returns 0 if no failures occurred and all callback functions returned 0. In case of internal errors, such as memory problems, the return value is -1 and errno is set accordingly. If the return value of a callback invocation was non-zero then that value is returned.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 on a 32-bit system this function is in fact nftw64, i.e., the LFS interface transparently replaces the old interface.
+
+Function: int nftw64 (const char *filename, __nftw64_func_t func, int descriptors, int flag)
+Preliminary: | MT-Safe cwd | AS-Unsafe heap | AC-Unsafe mem fd cwd | See POSIX Safety Concepts.
+
+This function is similar to nftw but it can work on filesystems with large files. File information is reported using a variable of type struct stat64 which is passed by reference to the callback function.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 on a 32-bit system this function is available under the name nftw and transparently replaces the old implementation.
+
+Next: Symbolic Links, Previous: Working with Directory Trees, Up: File System Interface   [Contents][Index]
+
+14.4 Hard Links
+In POSIX systems, one file can have many names at the same time. All of the names are equally real, and no one of them is preferred to the others.
+
+To add a name to a file, use the link function. (The new name is also called a hard link to the file.) Creating a new link to a file does not copy the contents of the file; it simply makes a new name by which the file can be known, in addition to the file’s existing name or names.
+
+One file can have names in several directories, so the organization of the file system is not a strict hierarchy or tree.
+
+In most implementations, it is not possible to have hard links to the same file in multiple file systems. link reports an error if you try to make a hard link to the file from another file system when this cannot be done.
+
+The prototype for the link function is declared in the header file unistd.h.
+
+Function: int link (const char *oldname, const char *newname)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The link function makes a new link to the existing file named by oldname, under the new name newname.
+
+This function returns a value of 0 if it is successful and -1 on failure. In addition to the usual file name errors (see File Name Errors) for both oldname and newname, the following errno error conditions are defined for this function:
+
+EACCES
+You are not allowed to write to the directory in which the new link is to be written.
+
+EEXIST
+There is already a file named newname. If you want to replace this link with a new link, you must remove the old link explicitly first.
+
+EMLINK
+There are already too many links to the file named by oldname. (The maximum number of links to a file is LINK_MAX; see Limits on File System Capacity.)
+
+ENOENT
+The file named by oldname doesn’t exist. You can’t make a link to a file that doesn’t exist.
+
+ENOSPC
+The directory or file system that would contain the new link is full and cannot be extended.
+
+EPERM
+On GNU/Linux and GNU/Hurd systems and some others, you cannot make links to directories. Many systems allow only privileged users to do so. This error is used to report the problem.
+
+EROFS
+The directory containing the new link can’t be modified because it’s on a read-only file system.
+
+EXDEV
+The directory specified in newname is on a different file system than the existing file.
+
+EIO
+A hardware error occurred while trying to read or write the to filesystem.
+
+Function: int linkat (int oldfd, const char *oldname, int newfd, const char *newname, int flags)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The linkat function is analogous to the link function, except that it identifies its source and target using a combination of a file descriptor (referring to a directory) and a pathname. If a pathnames is not absolute, it is resolved relative to the corresponding file descriptor. The special file descriptor AT_FDCWD denotes the current directory.
+
+The flags argument is a combination of the following flags:
+
+AT_SYMLINK_FOLLOW
+If the source path identified by oldfd and oldname is a symbolic link, linkat follows the symbolic link and creates a link to its target. If the flag is not set, a link for the symbolic link itself is created; this is not supported by all file systems and linkat can fail in this case.
+
+AT_EMPTY_PATH
+If this flag is specified, oldname can be an empty string. In this case, a new link to the file denoted by the descriptor oldfd is created, which may have been opened with O_PATH or O_TMPFILE. This flag is a GNU extension.
+
+Next: Deleting Files, Previous: Hard Links, Up: File System Interface   [Contents][Index]
+
+14.5 Symbolic Links
+GNU systems support soft links or symbolic links. This is a kind of “file” that is essentially a pointer to another file name. Unlike hard links, symbolic links can be made to directories or across file systems with no restrictions. You can also make a symbolic link to a name which is not the name of any file. (Opening this link will fail until a file by that name is created.) Likewise, if the symbolic link points to an existing file which is later deleted, the symbolic link continues to point to the same file name even though the name no longer names any file.
+
+The reason symbolic links work the way they do is that special things happen when you try to open the link. The open function realizes you have specified the name of a link, reads the file name contained in the link, and opens that file name instead. The stat function likewise operates on the file that the symbolic link points to, instead of on the link itself.
+
+By contrast, other operations such as deleting or renaming the file operate on the link itself. The functions readlink and lstat also refrain from following symbolic links, because their purpose is to obtain information about the link. link, the function that makes a hard link, does too. It makes a hard link to the symbolic link, which one rarely wants.
+
+Some systems have, for some functions operating on files, a limit on how many symbolic links are followed when resolving a path name. The limit if it exists is published in the sys/param.h header file.
+
+Macro: int MAXSYMLINKS
+The macro MAXSYMLINKS specifies how many symlinks some function will follow before returning ELOOP. Not all functions behave the same and this value is not the same as that returned for _SC_SYMLOOP by sysconf. In fact, the sysconf result can indicate that there is no fixed limit although MAXSYMLINKS exists and has a finite value.
+
+Prototypes for most of the functions listed in this section are in unistd.h.
+
+Function: int symlink (const char *oldname, const char *newname)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The symlink function makes a symbolic link to oldname named newname.
+
+The normal return value from symlink is 0. A return value of -1 indicates an error. In addition to the usual file name syntax errors (see File Name Errors), the following errno error conditions are defined for this function:
+
+EEXIST
+There is already an existing file named newname.
+
+EROFS
+The file newname would exist on a read-only file system.
+
+ENOSPC
+The directory or file system cannot be extended to make the new link.
+
+EIO
+A hardware error occurred while reading or writing data on the disk.
+
+Function: ssize_t readlink (const char *filename, char *buffer, size_t size)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The readlink function gets the value of the symbolic link filename. The file name that the link points to is copied into buffer. This file name string is not null-terminated; readlink normally returns the number of characters copied. The size argument specifies the maximum number of characters to copy, usually the allocation size of buffer.
+
+If the return value equals size, you cannot tell whether or not there was room to return the entire name. So make a bigger buffer and call readlink again. Here is an example:
+
+char *
+readlink_malloc (const char *filename)
+{
+  size_t size = 50;
+  char *buffer = NULL;
+
+  while (1)
+    {
+      buffer = xreallocarray (buffer, size, 2);
+      size *= 2;
+      ssize_t nchars = readlink (filename, buffer, size);
+      if (nchars < 0)
+        {
+          free (buffer);
+          return NULL;
+        }
+      if (nchars < size)
+        return buffer;
+    }
+}
+A value of -1 is returned in case of error. In addition to the usual file name errors (see File Name Errors), the following errno error conditions are defined for this function:
+
+EINVAL
+The named file is not a symbolic link.
+
+EIO
+A hardware error occurred while reading or writing data on the disk.
+
+In some situations it is desirable to resolve all the symbolic links to get the real name of a file where no prefix names a symbolic link which is followed and no filename in the path is . or ... This is for instance desirable if files have to be compared in which case different names can refer to the same inode.
+
+Function: char * canonicalize_file_name (const char *name)
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+The canonicalize_file_name function returns the absolute name of the file named by name which contains no ., .. components nor any repeated path separators (/) or symlinks. The result is passed back as the return value of the function in a block of memory allocated with malloc. If the result is not used anymore the memory should be freed with a call to free.
+
+If any of the path components are missing the function returns a NULL pointer. This is also what is returned if the length of the path reaches or exceeds PATH_MAX characters. In any case errno is set accordingly.
+
+ENAMETOOLONG
+The resulting path is too long. This error only occurs on systems which have a limit on the file name length.
+
+EACCES
+At least one of the path components is not readable.
+
+ENOENT
+The input file name is empty.
+
+ENOENT
+At least one of the path components does not exist.
+
+ELOOP
+More than MAXSYMLINKS many symlinks have been followed.
+
+This function is a GNU extension and is declared in stdlib.h.
+
+The Unix standard includes a similar function which differs from canonicalize_file_name in that the user has to provide the buffer where the result is placed in.
+
+Function: char * realpath (const char *restrict name, char *restrict resolved)
+Preliminary: | MT-Safe | AS-Unsafe heap | AC-Unsafe mem fd | See POSIX Safety Concepts.
+
+A call to realpath where the resolved parameter is NULL behaves exactly like canonicalize_file_name. The function allocates a buffer for the file name and returns a pointer to it. If resolved is not NULL it points to a buffer into which the result is copied. It is the callers responsibility to allocate a buffer which is large enough. On systems which define PATH_MAX this means the buffer must be large enough for a pathname of this size. For systems without limitations on the pathname length the requirement cannot be met and programs should not call realpath with anything but NULL for the second parameter.
+
+One other difference is that the buffer resolved (if nonzero) will contain the part of the path component which does not exist or is not readable if the function returns NULL and errno is set to EACCES or ENOENT.
+
+This function is declared in stdlib.h.
+
+The advantage of using this function is that it is more widely available. The drawback is that it reports failures for long paths on systems which have no limits on the file name length.
+
+Next: Renaming Files, Previous: Symbolic Links, Up: File System Interface   [Contents][Index]
+
+14.6 Deleting Files
+You can delete a file with unlink or remove.
+
+Deletion actually deletes a file name. If this is the file’s only name, then the file is deleted as well. If the file has other remaining names (see Hard Links), it remains accessible under those names.
+
+Function: int unlink (const char *filename)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The unlink function deletes the file name filename. If this is a file’s sole name, the file itself is also deleted. (Actually, if any process has the file open when this happens, deletion is postponed until all processes have closed the file.)
+
+The function unlink is declared in the header file unistd.h.
+
+This function returns 0 on successful completion, and -1 on error. In addition to the usual file name errors (see File Name Errors), the following errno error conditions are defined for this function:
+
+EACCES
+Write permission is denied for the directory from which the file is to be removed, or the directory has the sticky bit set and you do not own the file.
+
+EBUSY
+This error indicates that the file is being used by the system in such a way that it can’t be unlinked. For example, you might see this error if the file name specifies the root directory or a mount point for a file system.
+
+ENOENT
+The file name to be deleted doesn’t exist.
+
+EPERM
+On some systems unlink cannot be used to delete the name of a directory, or at least can only be used this way by a privileged user. To avoid such problems, use rmdir to delete directories. (On GNU/Linux and GNU/Hurd systems unlink can never delete the name of a directory.)
+
+EROFS
+The directory containing the file name to be deleted is on a read-only file system and can’t be modified.
+
+Function: int rmdir (const char *filename)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The rmdir function deletes a directory. The directory must be empty before it can be removed; in other words, it can only contain entries for . and ...
+
+In most other respects, rmdir behaves like unlink. There are two additional errno error conditions defined for rmdir:
+
+ENOTEMPTY
+EEXIST
+The directory to be deleted is not empty.
+
+These two error codes are synonymous; some systems use one, and some use the other. GNU/Linux and GNU/Hurd systems always use ENOTEMPTY.
+
+The prototype for this function is declared in the header file unistd.h.
+
+Function: int remove (const char *filename)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This is the ISO C function to remove a file. It works like unlink for files and like rmdir for directories. remove is declared in stdio.h.
+
+Next: Creating Directories, Previous: Deleting Files, Up: File System Interface   [Contents][Index]
+
+14.7 Renaming Files
+The rename function is used to change a file’s name.
+
+Function: int rename (const char *oldname, const char *newname)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The rename function renames the file oldname to newname. The file formerly accessible under the name oldname is afterwards accessible as newname instead. (If the file had any other names aside from oldname, it continues to have those names.)
+
+The directory containing the name newname must be on the same file system as the directory containing the name oldname.
+
+One special case for rename is when oldname and newname are two names for the same file. The consistent way to handle this case is to delete oldname. However, in this case POSIX requires that rename do nothing and report success—which is inconsistent. We don’t know what your operating system will do.
+
+If oldname is not a directory, then any existing file named newname is removed during the renaming operation. However, if newname is the name of a directory, rename fails in this case.
+
+If oldname is a directory, then either newname must not exist or it must name a directory that is empty. In the latter case, the existing directory named newname is deleted first. The name newname must not specify a subdirectory of the directory oldname which is being renamed.
+
+One useful feature of rename is that the meaning of newname changes “atomically” from any previously existing file by that name to its new meaning (i.e., the file that was called oldname). There is no instant at which newname is non-existent “in between” the old meaning and the new meaning. If there is a system crash during the operation, it is possible for both names to still exist; but newname will always be intact if it exists at all.
+
+If rename fails, it returns -1. In addition to the usual file name errors (see File Name Errors), the following errno error conditions are defined for this function:
+
+EACCES
+One of the directories containing newname or oldname refuses write permission; or newname and oldname are directories and write permission is refused for one of them.
+
+EBUSY
+A directory named by oldname or newname is being used by the system in a way that prevents the renaming from working. This includes directories that are mount points for filesystems, and directories that are the current working directories of processes.
+
+ENOTEMPTY
+EEXIST
+The directory newname isn’t empty. GNU/Linux and GNU/Hurd systems always return ENOTEMPTY for this, but some other systems return EEXIST.
+
+EINVAL
+oldname is a directory that contains newname.
+
+EISDIR
+newname is a directory but the oldname isn’t.
+
+EMLINK
+The parent directory of newname would have too many links (entries).
+
+ENOENT
+The file oldname doesn’t exist.
+
+ENOSPC
+The directory that would contain newname has no room for another entry, and there is no space left in the file system to expand it.
+
+EROFS
+The operation would involve writing to a directory on a read-only file system.
+
+EXDEV
+The two file names newname and oldname are on different file systems.
+
+Next: File Attributes, Previous: Renaming Files, Up: File System Interface   [Contents][Index]
+
+14.8 Creating Directories
+Directories are created with the mkdir function. (There is also a shell command mkdir which does the same thing.)
+
+Function: int mkdir (const char *filename, mode_t mode)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The mkdir function creates a new, empty directory with name filename.
+
+The argument mode specifies the file permissions for the new directory file. See The Mode Bits for Access Permission, for more information about this.
+
+A return value of 0 indicates successful completion, and -1 indicates failure. In addition to the usual file name syntax errors (see File Name Errors), the following errno error conditions are defined for this function:
+
+EACCES
+Write permission is denied for the parent directory in which the new directory is to be added.
+
+EEXIST
+A file named filename already exists.
+
+EMLINK
+The parent directory has too many links (entries).
+
+Well-designed file systems never report this error, because they permit more links than your disk could possibly hold. However, you must still take account of the possibility of this error, as it could result from network access to a file system on another machine.
+
+ENOSPC
+The file system doesn’t have enough room to create the new directory.
+
+EROFS
+The parent directory of the directory being created is on a read-only file system and cannot be modified.
+
+To use this function, your program should include the header file sys/stat.h.
+
+Next: Making Special Files, Previous: Creating Directories, Up: File System Interface   [Contents][Index]
+
+14.9 File Attributes
+When you issue an ‘ls -l’ shell command on a file, it gives you information about the size of the file, who owns it, when it was last modified, etc. These are called the file attributes, and are associated with the file itself and not a particular one of its names.
+
+This section contains information about how you can inquire about and modify the attributes of a file.
+
+The meaning of the File Attributes
+Reading the Attributes of a File
+Testing the Type of a File
+File Owner
+The Mode Bits for Access Permission
+How Your Access to a File is Decided
+Assigning File Permissions
+Testing Permission to Access a File
+File Times
+File Size
+Storage Allocation
+Next: Reading the Attributes of a File, Up: File Attributes   [Contents][Index]
+
+14.9.1 The meaning of the File Attributes
+When you read the attributes of a file, they come back in a structure called struct stat. This section describes the names of the attributes, their data types, and what they mean. For the functions to read the attributes of a file, see Reading the Attributes of a File.
+
+The header file sys/stat.h declares all the symbols defined in this section.
+
+Data Type: struct stat
+The stat structure type is used to return information about the attributes of a file. It contains at least the following members:
+
+mode_t st_mode
+Specifies the mode of the file. This includes file type information (see Testing the Type of a File) and the file permission bits (see The Mode Bits for Access Permission).
+
+ino_t st_ino
+The file serial number, which distinguishes this file from all other files on the same device.
+
+dev_t st_dev
+Identifies the device containing the file. The st_ino and st_dev, taken together, uniquely identify the file. The st_dev value is not necessarily consistent across reboots or system crashes, however.
+
+nlink_t st_nlink
+The number of hard links to the file. This count keeps track of how many directories have entries for this file. If the count is ever decremented to zero, then the file itself is discarded as soon as no process still holds it open. Symbolic links are not counted in the total.
+
+uid_t st_uid
+The user ID of the file’s owner. See File Owner.
+
+gid_t st_gid
+The group ID of the file. See File Owner.
+
+off_t st_size
+This specifies the size of a regular file in bytes. For files that are really devices this field isn’t usually meaningful. For symbolic links this specifies the length of the file name the link refers to.
+
+time_t st_atime
+This is the last access time for the file. See File Times.
+
+unsigned long int st_atime_usec
+This is the fractional part of the last access time for the file. See File Times.
+
+time_t st_mtime
+This is the time of the last modification to the contents of the file. See File Times.
+
+unsigned long int st_mtime_usec
+This is the fractional part of the time of the last modification to the contents of the file. See File Times.
+
+time_t st_ctime
+This is the time of the last modification to the attributes of the file. See File Times.
+
+unsigned long int st_ctime_usec
+This is the fractional part of the time of the last modification to the attributes of the file. See File Times.
+
+blkcnt_t st_blocks
+This is the amount of disk space that the file occupies, measured in units of 512-byte blocks.
+
+The number of disk blocks is not strictly proportional to the size of the file, for two reasons: the file system may use some blocks for internal record keeping; and the file may be sparse—it may have “holes” which contain zeros but do not actually take up space on the disk.
+
+You can tell (approximately) whether a file is sparse by comparing this value with st_size, like this:
+
+(st.st_blocks * 512 < st.st_size)
+This test is not perfect because a file that is just slightly sparse might not be detected as sparse at all. For practical applications, this is not a problem.
+
+unsigned int st_blksize
+The optimal block size for reading or writing this file, in bytes. You might use this size for allocating the buffer space for reading or writing the file. (This is unrelated to st_blocks.)
+
+The extensions for the Large File Support (LFS) require, even on 32-bit machines, types which can handle file sizes up to 2^63. Therefore a new definition of struct stat is necessary.
+
+Data Type: struct stat64
+The members of this type are the same and have the same names as those in struct stat. The only difference is that the members st_ino, st_size, and st_blocks have a different type to support larger values.
+
+mode_t st_mode
+Specifies the mode of the file. This includes file type information (see Testing the Type of a File) and the file permission bits (see The Mode Bits for Access Permission).
+
+ino64_t st_ino
+The file serial number, which distinguishes this file from all other files on the same device.
+
+dev_t st_dev
+Identifies the device containing the file. The st_ino and st_dev, taken together, uniquely identify the file. The st_dev value is not necessarily consistent across reboots or system crashes, however.
+
+nlink_t st_nlink
+The number of hard links to the file. This count keeps track of how many directories have entries for this file. If the count is ever decremented to zero, then the file itself is discarded as soon as no process still holds it open. Symbolic links are not counted in the total.
+
+uid_t st_uid
+The user ID of the file’s owner. See File Owner.
+
+gid_t st_gid
+The group ID of the file. See File Owner.
+
+off64_t st_size
+This specifies the size of a regular file in bytes. For files that are really devices this field isn’t usually meaningful. For symbolic links this specifies the length of the file name the link refers to.
+
+time_t st_atime
+This is the last access time for the file. See File Times.
+
+unsigned long int st_atime_usec
+This is the fractional part of the last access time for the file. See File Times.
+
+time_t st_mtime
+This is the time of the last modification to the contents of the file. See File Times.
+
+unsigned long int st_mtime_usec
+This is the fractional part of the time of the last modification to the contents of the file. See File Times.
+
+time_t st_ctime
+This is the time of the last modification to the attributes of the file. See File Times.
+
+unsigned long int st_ctime_usec
+This is the fractional part of the time of the last modification to the attributes of the file. See File Times.
+
+blkcnt64_t st_blocks
+This is the amount of disk space that the file occupies, measured in units of 512-byte blocks.
+
+unsigned int st_blksize
+The optimal block size for reading of writing this file, in bytes. You might use this size for allocating the buffer space for reading of writing the file. (This is unrelated to st_blocks.)
+
+Some of the file attributes have special data type names which exist specifically for those attributes. (They are all aliases for well-known integer types that you know and love.) These typedef names are defined in the header file sys/types.h as well as in sys/stat.h. Here is a list of them.
+
+Data Type: mode_t
+This is an integer data type used to represent file modes. In the GNU C Library, this is an unsigned type no narrower than unsigned int.
+
+Data Type: ino_t
+This is an unsigned integer type used to represent file serial numbers. (In Unix jargon, these are sometimes called inode numbers.) In the GNU C Library, this type is no narrower than unsigned int.
+
+If the source is compiled with _FILE_OFFSET_BITS == 64 this type is transparently replaced by ino64_t.
+
+Data Type: ino64_t
+This is an unsigned integer type used to represent file serial numbers for the use in LFS. In the GNU C Library, this type is no narrower than unsigned int.
+
+When compiling with _FILE_OFFSET_BITS == 64 this type is available under the name ino_t.
+
+Data Type: dev_t
+This is an arithmetic data type used to represent file device numbers. In the GNU C Library, this is an integer type no narrower than int.
+
+Data Type: nlink_t
+This is an integer type used to represent file link counts.
+
+Data Type: blkcnt_t
+This is a signed integer type used to represent block counts. In the GNU C Library, this type is no narrower than int.
+
+If the source is compiled with _FILE_OFFSET_BITS == 64 this type is transparently replaced by blkcnt64_t.
+
+Data Type: blkcnt64_t
+This is a signed integer type used to represent block counts for the use in LFS. In the GNU C Library, this type is no narrower than int.
+
+When compiling with _FILE_OFFSET_BITS == 64 this type is available under the name blkcnt_t.
+
+Next: Testing the Type of a File, Previous: The meaning of the File Attributes, Up: File Attributes   [Contents][Index]
+
+14.9.2 Reading the Attributes of a File
+To examine the attributes of files, use the functions stat, fstat and lstat. They return the attribute information in a struct stat object. All three functions are declared in the header file sys/stat.h.
+
+Function: int stat (const char *filename, struct stat *buf)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The stat function returns information about the attributes of the file named by filename in the structure pointed to by buf.
+
+If filename is the name of a symbolic link, the attributes you get describe the file that the link points to. If the link points to a nonexistent file name, then stat fails reporting a nonexistent file.
+
+The return value is 0 if the operation is successful, or -1 on failure. In addition to the usual file name errors (see File Name Errors, the following errno error conditions are defined for this function:
+
+ENOENT
+The file named by filename doesn’t exist.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is in fact stat64 since the LFS interface transparently replaces the normal implementation.
+
+Function: int stat64 (const char *filename, struct stat64 *buf)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is similar to stat but it is also able to work on files larger than 2^31 bytes on 32-bit systems. To be able to do this the result is stored in a variable of type struct stat64 to which buf must point.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is available under the name stat and so transparently replaces the interface for small files on 32-bit machines.
+
+Function: int fstat (int filedes, struct stat *buf)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The fstat function is like stat, except that it takes an open file descriptor as an argument instead of a file name. See Low-Level Input/Output.
+
+Like stat, fstat returns 0 on success and -1 on failure. The following errno error conditions are defined for fstat:
+
+EBADF
+The filedes argument is not a valid file descriptor.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is in fact fstat64 since the LFS interface transparently replaces the normal implementation.
+
+Function: int fstat64 (int filedes, struct stat64 *buf)
+Preliminary: | MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function is similar to fstat but is able to work on large files on 32-bit platforms. For large files the file descriptor filedes should be obtained by open64 or creat64. The buf pointer points to a variable of type struct stat64 which is able to represent the larger values.
+
+When the sources are compiled with _FILE_OFFSET_BITS == 64 this function is available under the name fstat and so transparently replaces the interface for small files on 32-bit machines.
+
+Function: int lstat (const char *filename, struct stat *buf)

@@ -1,0 +1,1999 @@
+Macro: int EPFNOSUPPORT
+“Protocol family not supported.” The socket communications protocol family you requested is not supported.
+
+Macro: int EAFNOSUPPORT
+“Address family not supported by protocol.” The address family specified for a socket is not supported; it is inconsistent with the protocol being used on the socket. See Sockets.
+
+Macro: int EADDRINUSE
+“Address already in use.” The requested socket address is already in use. See Socket Addresses.
+
+Macro: int EADDRNOTAVAIL
+“Cannot assign requested address.” The requested socket address is not available; for example, you tried to give a socket a name that doesn’t match the local host name. See Socket Addresses.
+
+Macro: int ENETDOWN
+“Network is down.” A socket operation failed because the network was down.
+
+Macro: int ENETUNREACH
+“Network is unreachable.” A socket operation failed because the subnet containing the remote host was unreachable.
+
+Macro: int ENETRESET
+“Network dropped connection on reset.” A network connection was reset because the remote host crashed.
+
+Macro: int ECONNABORTED
+“Software caused connection abort.” A network connection was aborted locally.
+
+Macro: int ECONNRESET
+“Connection reset by peer.” A network connection was closed for reasons outside the control of the local host, such as by the remote machine rebooting or an unrecoverable protocol violation.
+
+Macro: int ENOBUFS
+“No buffer space available.” The kernel’s buffers for I/O operations are all in use. In GNU, this error is always synonymous with ENOMEM; you may get one or the other from network operations.
+
+Macro: int EISCONN
+“Transport endpoint is already connected.” You tried to connect a socket that is already connected. See Making a Connection.
+
+Macro: int ENOTCONN
+“Transport endpoint is not connected.” The socket is not connected to anything. You get this error when you try to transmit data over a socket, without first specifying a destination for the data. For a connectionless socket (for datagram protocols, such as UDP), you get EDESTADDRREQ instead.
+
+Macro: int EDESTADDRREQ
+“Destination address required.” No default destination address was set for the socket. You get this error when you try to transmit data over a connectionless socket, without first specifying a destination for the data with connect.
+
+Macro: int ESHUTDOWN
+“Cannot send after transport endpoint shutdown.” The socket has already been shut down.
+
+Macro: int ETOOMANYREFS
+“Too many references: cannot splice.”
+
+Macro: int ETIMEDOUT
+“Connection timed out.” A socket operation with a specified timeout received no response during the timeout period.
+
+Macro: int ECONNREFUSED
+“Connection refused.” A remote host refused to allow the network connection (typically because it is not running the requested service).
+
+Macro: int ELOOP
+“Too many levels of symbolic links.” Too many levels of symbolic links were encountered in looking up a file name. This often indicates a cycle of symbolic links.
+
+Macro: int ENAMETOOLONG
+“File name too long.” Filename too long (longer than PATH_MAX; see Limits on File System Capacity) or host name too long (in gethostname or sethostname; see Host Identification).
+
+Macro: int EHOSTDOWN
+“Host is down.” The remote host for a requested network connection is down.
+
+Macro: int EHOSTUNREACH
+“No route to host.” The remote host for a requested network connection is not reachable.
+
+Macro: int ENOTEMPTY
+“Directory not empty.” Directory not empty, where an empty directory was expected. Typically, this error occurs when you are trying to delete a directory.
+
+Macro: int EPROCLIM
+“Too many processes.” This means that the per-user limit on new process would be exceeded by an attempted fork. See Limiting Resource Usage, for details on the RLIMIT_NPROC limit.
+
+Macro: int EUSERS
+“Too many users.” The file quota system is confused because there are too many users.
+
+Macro: int EDQUOT
+“Disk quota exceeded.” The user’s disk quota was exceeded.
+
+Macro: int ESTALE
+“Stale file handle.” This indicates an internal confusion in the file system which is due to file system rearrangements on the server host for NFS file systems or corruption in other file systems. Repairing this condition usually requires unmounting, possibly repairing and remounting the file system.
+
+Macro: int EREMOTE
+“Object is remote.” An attempt was made to NFS-mount a remote file system with a file name that already specifies an NFS-mounted file. (This is an error on some operating systems, but we expect it to work properly on GNU/Hurd systems, making this error code impossible.)
+
+Macro: int EBADRPC
+“RPC struct is bad.”
+
+Macro: int ERPCMISMATCH
+“RPC version wrong.”
+
+Macro: int EPROGUNAVAIL
+“RPC program not available.”
+
+Macro: int EPROGMISMATCH
+“RPC program version wrong.”
+
+Macro: int EPROCUNAVAIL
+“RPC bad procedure for program.”
+
+Macro: int ENOLCK
+“No locks available.” This is used by the file locking facilities; see File Locks. This error is never generated by GNU/Hurd systems, but it can result from an operation to an NFS server running another operating system.
+
+Macro: int EFTYPE
+“Inappropriate file type or format.” The file was the wrong type for the operation, or a data file had the wrong format.
+
+On some systems chmod returns this error if you try to set the sticky bit on a non-directory file; see Assigning File Permissions.
+
+Macro: int EAUTH
+“Authentication error.”
+
+Macro: int ENEEDAUTH
+“Need authenticator.”
+
+Macro: int ENOSYS
+“Function not implemented.” This indicates that the function called is not implemented at all, either in the C library itself or in the operating system. When you get this error, you can be sure that this particular function will always fail with ENOSYS unless you install a new version of the C library or the operating system.
+
+Macro: int ELIBEXEC
+“Cannot exec a shared library directly.”
+
+Macro: int ENOTSUP
+“Not supported.” A function returns this error when certain parameter values are valid, but the functionality they request is not available. This can mean that the function does not implement a particular command or option value or flag bit at all. For functions that operate on some object given in a parameter, such as a file descriptor or a port, it might instead mean that only that specific object (file descriptor, port, etc.) is unable to support the other parameters given; different file descriptors might support different ranges of parameter values.
+
+If the entire function is not available at all in the implementation, it returns ENOSYS instead.
+
+Macro: int EILSEQ
+“Invalid or incomplete multibyte or wide character.” While decoding a multibyte character the function came along an invalid or an incomplete sequence of bytes or the given wide character is invalid.
+
+Macro: int EBACKGROUND
+“Inappropriate operation for background process.” On GNU/Hurd systems, servers supporting the term protocol return this error for certain operations when the caller is not in the foreground process group of the terminal. Users do not usually see this error because functions such as read and write translate it into a SIGTTIN or SIGTTOU signal. See Job Control, for information on process groups and these signals.
+
+Macro: int EDIED
+“Translator died.” On GNU/Hurd systems, opening a file returns this error when the file is translated by a program and the translator program dies while starting up, before it has connected to the file.
+
+Macro: int ED
+“?.” The experienced user will know what is wrong.
+
+Macro: int EGREGIOUS
+“You really blew it this time.” You did what?
+
+Macro: int EIEIO
+“Computer bought the farm.” Go home and have a glass of warm, dairy-fresh milk.
+
+Macro: int EGRATUITOUS
+“Gratuitous error.” This error code has no purpose.
+
+Macro: int EBADMSG
+“Bad message.”
+
+Macro: int EIDRM
+“Identifier removed.”
+
+Macro: int EMULTIHOP
+“Multihop attempted.”
+
+Macro: int ENODATA
+“No data available.”
+
+Macro: int ENOLINK
+“Link has been severed.”
+
+Macro: int ENOMSG
+“No message of desired type.”
+
+Macro: int ENOSR
+“Out of streams resources.”
+
+Macro: int ENOSTR
+“Device not a stream.”
+
+Macro: int EOVERFLOW
+“Value too large for defined data type.”
+
+Macro: int EPROTO
+“Protocol error.”
+
+Macro: int ETIME
+“Timer expired.”
+
+Macro: int ECANCELED
+“Operation canceled.” An asynchronous operation was canceled before it completed. See Perform I/O Operations in Parallel. When you call aio_cancel, the normal result is for the operations affected to complete with this error; see Cancellation of AIO Operations.
+
+Macro: int EOWNERDEAD
+“Owner died.”
+
+Macro: int ENOTRECOVERABLE
+“State not recoverable.”
+
+The following error codes are defined by the Linux/i386 kernel. They are not yet documented.
+
+Macro: int ERESTART
+“Interrupted system call should be restarted.”
+
+Macro: int ECHRNG
+“Channel number out of range.”
+
+Macro: int EL2NSYNC
+“Level 2 not synchronized.”
+
+Macro: int EL3HLT
+“Level 3 halted.”
+
+Macro: int EL3RST
+“Level 3 reset.”
+
+Macro: int ELNRNG
+“Link number out of range.”
+
+Macro: int EUNATCH
+“Protocol driver not attached.”
+
+Macro: int ENOCSI
+“No CSI structure available.”
+
+Macro: int EL2HLT
+“Level 2 halted.”
+
+Macro: int EBADE
+“Invalid exchange.”
+
+Macro: int EBADR
+“Invalid request descriptor.”
+
+Macro: int EXFULL
+“Exchange full.”
+
+Macro: int ENOANO
+“No anode.”
+
+Macro: int EBADRQC
+“Invalid request code.”
+
+Macro: int EBADSLT
+“Invalid slot.”
+
+Macro: int EDEADLOCK
+“File locking deadlock error.”
+
+Macro: int EBFONT
+“Bad font file format.”
+
+Macro: int ENONET
+“Machine is not on the network.”
+
+Macro: int ENOPKG
+“Package not installed.”
+
+Macro: int EADV
+“Advertise error.”
+
+Macro: int ESRMNT
+“Srmount error.”
+
+Macro: int ECOMM
+“Communication error on send.”
+
+Macro: int EDOTDOT
+“RFS specific error.”
+
+Macro: int ENOTUNIQ
+“Name not unique on network.”
+
+Macro: int EBADFD
+“File descriptor in bad state.”
+
+Macro: int EREMCHG
+“Remote address changed.”
+
+Macro: int ELIBACC
+“Can not access a needed shared library.”
+
+Macro: int ELIBBAD
+“Accessing a corrupted shared library.”
+
+Macro: int ELIBSCN
+“.lib section in a.out corrupted.”
+
+Macro: int ELIBMAX
+“Attempting to link in too many shared libraries.”
+
+Macro: int ESTRPIPE
+“Streams pipe error.”
+
+Macro: int EUCLEAN
+“Structure needs cleaning.”
+
+Macro: int ENOTNAM
+“Not a XENIX named type file.”
+
+Macro: int ENAVAIL
+“No XENIX semaphores available.”
+
+Macro: int EISNAM
+“Is a named type file.”
+
+Macro: int EREMOTEIO
+“Remote I/O error.”
+
+Macro: int ENOMEDIUM
+“No medium found.”
+
+Macro: int EMEDIUMTYPE
+“Wrong medium type.”
+
+Macro: int ENOKEY
+“Required key not available.”
+
+Macro: int EKEYEXPIRED
+“Key has expired.”
+
+Macro: int EKEYREVOKED
+“Key has been revoked.”
+
+Macro: int EKEYREJECTED
+“Key was rejected by service.”
+
+Macro: int ERFKILL
+“Operation not possible due to RF-kill.”
+
+Macro: int EHWPOISON
+“Memory page has hardware error.”
+
+Previous: Error Codes, Up: Error Reporting   [Contents][Index]
+
+2.3 Error Messages
+The library has functions and variables designed to make it easy for your program to report informative error messages in the customary format about the failure of a library call. The functions strerror and perror give you the standard error message for a given error code; the variable program_invocation_short_name gives you convenient access to the name of the program that encountered the error.
+
+Function: char * strerror (int errnum)
+Preliminary: | MT-Safe | AS-Unsafe heap i18n | AC-Unsafe mem | See POSIX Safety Concepts.
+
+The strerror function maps the error code (see Checking for Errors) specified by the errnum argument to a descriptive error message string. The string is translated according to the current locale. The return value is a pointer to this string.
+
+The value errnum normally comes from the variable errno.
+
+You should not modify the string returned by strerror. Also, if you make subsequent calls to strerror or strerror_l, or the thread that obtained the string exits, the returned pointer will be invalidated.
+
+As there is no way to restore the previous state after calling strerror, library code should not call this function because it may interfere with application use of strerror, invalidating the string pointer before the application is done using it. Instead, strerror_r, snprintf with the ‘%m’ or ‘%#m’ specifiers, strerrorname_np, or strerrordesc_np can be used instead.
+
+The strerror function preserves the value of errno and cannot fail.
+
+The function strerror is declared in string.h.
+
+Function: char * strerror_l (int errnum, locale_t locale)
+Preliminary: | MT-Safe | AS-Unsafe heap i18n | AC-Unsafe mem | See POSIX Safety Concepts.
+
+This function is like strerror, except that the returned string is translated according to locale (instead of the current locale used by strerror). Note that calling strerror_l invalidates the pointer returned by strerror and vice versa.
+
+The function strerror_l is defined by POSIX and is declared in string.h.
+
+Function: char * strerror_r (int errnum, char *buf, size_t n)
+Preliminary: | MT-Safe | AS-Unsafe i18n | AC-Unsafe | See POSIX Safety Concepts.
+
+The following description is for the GNU variant of the function, used if _GNU_SOURCE is defined. See Feature Test Macros.
+
+The strerror_r function works like strerror but instead of returning a pointer to a string that is managed by the GNU C Library, it can use the user supplied buffer starting at buf for storing the string.
+
+At most n characters are written (including the NUL byte) to buf, so it is up to the user to select a buffer large enough. Whether returned pointer points to the buf array or not depends on the errnum argument. If the result string is not stored in buf, the string will not change for the remaining execution of the program.
+
+The function strerror_r as described above is a GNU extension and it is declared in string.h. There is a POSIX variant of this function, described next.
+
+Function: int strerror_r (int errnum, char *buf, size_t n)
+Preliminary: | MT-Safe | AS-Unsafe i18n | AC-Unsafe | See POSIX Safety Concepts.
+
+This variant of the strerror_r function is used if a standard is selected that includes strerror_r, but _GNU_SOURCE is not defined. This POSIX variant of the function always writes the error message to the specified buffer buf of size n bytes.
+
+Upon success, strerror_r returns 0. Two more return values are used to indicate failure.
+
+EINVAL
+The errnum argument does not correspond to a known error constant.
+
+ERANGE
+The buffer size n is not large enough to store the entire error message.
+
+Even if an error is reported, strerror_r still writes as much of the error message to the output buffer as possible. After a call to strerror_r, the value of errno is unspecified.
+
+If you want to use the always-copying POSIX semantics of strerror_r in a program that is potentially compiled with _GNU_SOURCE defined, you can use snprintf with the ‘%m’ conversion specifier, like this:
+
+int saved_errno = errno;
+errno = errnum;
+int ret = snprintf (buf, n, "%m");
+errno = saved_errno;
+if (strerrorname_np (errnum) == NULL)
+  return EINVAL;
+if (ret >= n)
+  return ERANGE:
+return 0;
+This function is declared in string.h if it is declared at all. It is a POSIX extension.
+
+Function: void perror (const char *message)
+Preliminary: | MT-Safe race:stderr | AS-Unsafe corrupt i18n heap lock | AC-Unsafe corrupt lock mem fd | See POSIX Safety Concepts.
+
+This function prints an error message to the stream stderr; see Standard Streams. The orientation of stderr is not changed.
+
+If you call perror with a message that is either a null pointer or an empty string, perror just prints the error message corresponding to errno, adding a trailing newline.
+
+If you supply a non-null message argument, then perror prefixes its output with this string. It adds a colon and a space character to separate the message from the error string corresponding to errno.
+
+The function perror is declared in stdio.h.
+
+Function: const char * strerrorname_np (int errnum)
+| MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the name describing the error errnum or NULL if there is no known constant with this value (e.g "EINVAL" for EINVAL). The returned string does not change for the remaining execution of the program.
+
+This function is a GNU extension, declared in the header file string.h.
+
+Function: const char * strerrordesc_np (int errnum)
+| MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the message describing the error errnum or NULL if there is no known constant with this value (e.g "Invalid argument" for EINVAL). Different than strerror the returned description is not translated, and the returned string does not change for the remaining execution of the program.
+
+This function is a GNU extension, declared in the header file string.h.
+
+strerror and perror produce the exact same message for any given error code under the same locale; the precise text varies from system to system. With the GNU C Library, the messages are fairly short; there are no multi-line messages or embedded newlines. Each error message begins with a capital letter and does not include any terminating punctuation.
+
+Many programs that don’t read input from the terminal are designed to exit if any system call fails. By convention, the error message from such a program should start with the program’s name, sans directories. You can find that name in the variable program_invocation_short_name; the full file name is stored the variable program_invocation_name.
+
+Variable: char * program_invocation_name
+This variable’s value is the name that was used to invoke the program running in the current process. It is the same as argv[0]. Note that this is not necessarily a useful file name; often it contains no directory names. See Program Arguments.
+
+This variable is a GNU extension and is declared in errno.h.
+
+Variable: char * program_invocation_short_name
+This variable’s value is the name that was used to invoke the program running in the current process, with directory names removed. (That is to say, it is the same as program_invocation_name minus everything up to the last slash, if any.)
+
+This variable is a GNU extension and is declared in errno.h.
+
+The library initialization code sets up both of these variables before calling main.
+
+Portability Note: If you want your program to work with non-GNU libraries, you must save the value of argv[0] in main, and then strip off the directory names yourself. We added these extensions to make it possible to write self-contained error-reporting subroutines that require no explicit cooperation from main.
+
+Here is an example showing how to handle failure to open a file correctly. The function open_sesame tries to open the named file for reading and returns a stream if successful. The fopen library function returns a null pointer if it couldn’t open the file for some reason. In that situation, open_sesame constructs an appropriate error message using the strerror function, and terminates the program. If we were going to make some other library calls before passing the error code to strerror, we’d have to save it in a local variable instead, because those other library functions might overwrite errno in the meantime.
+
+#define _GNU_SOURCE
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+FILE *
+open_sesame (char *name)
+{
+  FILE *stream;
+
+  errno = 0;
+  stream = fopen (name, "r");
+  if (stream == NULL)
+    {
+      fprintf (stderr, "%s: Couldn't open file %s; %s\n",
+               program_invocation_short_name, name, strerror (errno));
+      exit (EXIT_FAILURE);
+    }
+  else
+    return stream;
+}
+Using perror has the advantage that the function is portable and available on all systems implementing ISO C. But often the text perror generates is not what is wanted and there is no way to extend or change what perror does. The GNU coding standard, for instance, requires error messages to be preceded by the program name and programs which read some input files should provide information about the input file name and the line number in case an error is encountered while reading the file. For these occasions there are two functions available which are widely used throughout the GNU project. These functions are declared in error.h.
+
+Function: void error (int status, int errnum, const char *format, …)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap i18n | AC-Safe | See POSIX Safety Concepts.
+
+The error function can be used to report general problems during program execution. The format argument is a format string just like those given to the printf family of functions. The arguments required for the format can follow the format parameter. Just like perror, error also can report an error code in textual form. But unlike perror the error value is explicitly passed to the function in the errnum parameter. This eliminates the problem mentioned above that the error reporting function must be called immediately after the function causing the error since otherwise errno might have a different value.
+
+error prints first the program name. If the application defined a global variable error_print_progname and points it to a function this function will be called to print the program name. Otherwise the string from the global variable program_name is used. The program name is followed by a colon and a space which in turn is followed by the output produced by the format string. If the errnum parameter is non-zero the format string output is followed by a colon and a space, followed by the error message for the error code errnum. In any case is the output terminated with a newline.
+
+The output is directed to the stderr stream. If the stderr wasn’t oriented before the call it will be narrow-oriented afterwards.
+
+The function will return unless the status parameter has a non-zero value. In this case the function will call exit with the status value for its parameter and therefore never return. If error returns, the global variable error_message_count is incremented by one to keep track of the number of errors reported.
+
+Function: void error_at_line (int status, int errnum, const char *fname, unsigned int lineno, const char *format, …)
+Preliminary: | MT-Unsafe race:error_at_line/error_one_per_line locale | AS-Unsafe corrupt heap i18n | AC-Unsafe corrupt/error_one_per_line | See POSIX Safety Concepts.
+
+The error_at_line function is very similar to the error function. The only differences are the additional parameters fname and lineno. The handling of the other parameters is identical to that of error except that between the program name and the string generated by the format string additional text is inserted.
+
+Directly following the program name a colon, followed by the file name pointed to by fname, another colon, and the value of lineno is printed.
+
+This additional output of course is meant to be used to locate an error in an input file (like a programming language source code file etc).
+
+If the global variable error_one_per_line is set to a non-zero value error_at_line will avoid printing consecutive messages for the same file and line. Repetition which are not directly following each other are not caught.
+
+Just like error this function only returns if status is zero. Otherwise exit is called with the non-zero value. If error returns, the global variable error_message_count is incremented by one to keep track of the number of errors reported.
+
+As mentioned above, the error and error_at_line functions can be customized by defining a variable named error_print_progname.
+
+Variable: void (*error_print_progname) (void)
+If the error_print_progname variable is defined to a non-zero value the function pointed to is called by error or error_at_line. It is expected to print the program name or do something similarly useful.
+
+The function is expected to print to the stderr stream and must be able to handle whatever orientation the stream has.
+
+The variable is global and shared by all threads.
+
+Variable: unsigned int error_message_count
+The error_message_count variable is incremented whenever one of the functions error or error_at_line returns. The variable is global and shared by all threads.
+
+Variable: int error_one_per_line
+The error_one_per_line variable influences only error_at_line. Normally the error_at_line function creates output for every invocation. If error_one_per_line is set to a non-zero value error_at_line keeps track of the last file name and line number for which an error was reported and avoids directly following messages for the same file and line. This variable is global and shared by all threads.
+
+A program which read some input file and reports errors in it could look like this:
+
+{
+  char *line = NULL;
+  size_t len = 0;
+  unsigned int lineno = 0;
+
+  error_message_count = 0;
+  while (! feof_unlocked (fp))
+    {
+      ssize_t n = getline (&line, &len, fp);
+      if (n <= 0)
+        /* End of file or error.  */
+        break;
+      ++lineno;
+
+      /* Process the line.  */
+      …
+
+      if (Detect error in line)
+        error_at_line (0, errval, filename, lineno,
+                       "some error text %s", some_variable);
+    }
+
+  if (error_message_count != 0)
+    error (EXIT_FAILURE, 0, "%u errors found", error_message_count);
+}
+error and error_at_line are clearly the functions of choice and enable the programmer to write applications which follow the GNU coding standard. The GNU C Library additionally contains functions which are used in BSD for the same purpose. These functions are declared in err.h. It is generally advised to not use these functions. They are included only for compatibility.
+
+Function: void warn (const char *format, …)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap i18n | AC-Unsafe corrupt lock mem | See POSIX Safety Concepts.
+
+The warn function is roughly equivalent to a call like
+
+  error (0, errno, format, the parameters)
+except that the global variables error respects and modifies are not used.
+
+Function: void vwarn (const char *format, va_list ap)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap i18n | AC-Unsafe corrupt lock mem | See POSIX Safety Concepts.
+
+The vwarn function is just like warn except that the parameters for the handling of the format string format are passed in as a value of type va_list.
+
+Function: void warnx (const char *format, …)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap | AC-Unsafe corrupt lock mem | See POSIX Safety Concepts.
+
+The warnx function is roughly equivalent to a call like
+
+  error (0, 0, format, the parameters)
+except that the global variables error respects and modifies are not used. The difference to warn is that no error number string is printed.
+
+Function: void vwarnx (const char *format, va_list ap)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap | AC-Unsafe corrupt lock mem | See POSIX Safety Concepts.
+
+The vwarnx function is just like warnx except that the parameters for the handling of the format string format are passed in as a value of type va_list.
+
+Function: void err (int status, const char *format, …)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap i18n | AC-Unsafe corrupt lock mem | See POSIX Safety Concepts.
+
+The err function is roughly equivalent to a call like
+
+  error (status, errno, format, the parameters)
+except that the global variables error respects and modifies are not used and that the program is exited even if status is zero.
+
+Function: void verr (int status, const char *format, va_list ap)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap i18n | AC-Unsafe corrupt lock mem | See POSIX Safety Concepts.
+
+The verr function is just like err except that the parameters for the handling of the format string format are passed in as a value of type va_list.
+
+Function: void errx (int status, const char *format, …)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap | AC-Unsafe corrupt lock mem | See POSIX Safety Concepts.
+
+The errx function is roughly equivalent to a call like
+
+  error (status, 0, format, the parameters)
+except that the global variables error respects and modifies are not used and that the program is exited even if status is zero. The difference to err is that no error number string is printed.
+
+Function: void verrx (int status, const char *format, va_list ap)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt heap | AC-Unsafe corrupt lock mem | See POSIX Safety Concepts.
+
+The verrx function is just like errx except that the parameters for the handling of the format string format are passed in as a value of type va_list.
+
+Next: Character Handling, Previous: Error Reporting, Up: Main Menu   [Contents][Index]
+
+3 Virtual Memory Allocation And Paging
+This chapter describes how processes manage and use memory in a system that uses the GNU C Library.
+
+The GNU C Library has several functions for dynamically allocating virtual memory in various ways. They vary in generality and in efficiency. The library also provides functions for controlling paging and allocation of real memory.
+
+Memory mapped I/O is not discussed in this chapter. See Memory-mapped I/O.
+
+Process Memory Concepts
+Allocating Storage For Program Data
+Resizing the Data Segment
+Memory Protection
+Locking Pages
+Next: Allocating Storage For Program Data, Up: Virtual Memory Allocation And Paging   [Contents][Index]
+
+3.1 Process Memory Concepts
+One of the most basic resources a process has available to it is memory. There are a lot of different ways systems organize memory, but in a typical one, each process has one linear virtual address space, with addresses running from zero to some huge maximum. It need not be contiguous; i.e., not all of these addresses actually can be used to store data.
+
+The virtual memory is divided into pages (4 kilobytes is typical). Backing each page of virtual memory is a page of real memory (called a frame) or some secondary storage, usually disk space. The disk space might be swap space or just some ordinary disk file. Actually, a page of all zeroes sometimes has nothing at all backing it – there’s just a flag saying it is all zeroes.
+
+The same frame of real memory or backing store can back multiple virtual pages belonging to multiple processes. This is normally the case, for example, with virtual memory occupied by GNU C Library code. The same real memory frame containing the printf function backs a virtual memory page in each of the existing processes that has a printf call in its program.
+
+In order for a program to access any part of a virtual page, the page must at that moment be backed by (“connected to”) a real frame. But because there is usually a lot more virtual memory than real memory, the pages must move back and forth between real memory and backing store regularly, coming into real memory when a process needs to access them and then retreating to backing store when not needed anymore. This movement is called paging.
+
+When a program attempts to access a page which is not at that moment backed by real memory, this is known as a page fault. When a page fault occurs, the kernel suspends the process, places the page into a real page frame (this is called “paging in” or “faulting in”), then resumes the process so that from the process’ point of view, the page was in real memory all along. In fact, to the process, all pages always seem to be in real memory. Except for one thing: the elapsed execution time of an instruction that would normally be a few nanoseconds is suddenly much, much, longer (because the kernel normally has to do I/O to complete the page-in). For programs sensitive to that, the functions described in Locking Pages can control it.
+
+Within each virtual address space, a process has to keep track of what is at which addresses, and that process is called memory allocation. Allocation usually brings to mind meting out scarce resources, but in the case of virtual memory, that’s not a major goal, because there is generally much more of it than anyone needs. Memory allocation within a process is mainly just a matter of making sure that the same byte of memory isn’t used to store two different things.
+
+Processes allocate memory in two major ways: by exec and programmatically. Actually, forking is a third way, but it’s not very interesting. See Creating a Process.
+
+Exec is the operation of creating a virtual address space for a process, loading its basic program into it, and executing the program. It is done by the “exec” family of functions (e.g. execl). The operation takes a program file (an executable), it allocates space to load all the data in the executable, loads it, and transfers control to it. That data is most notably the instructions of the program (the text), but also literals and constants in the program and even some variables: C variables with the static storage class (see Memory Allocation in C Programs).
+
+Once that program begins to execute, it uses programmatic allocation to gain additional memory. In a C program with the GNU C Library, there are two kinds of programmatic allocation: automatic and dynamic. See Memory Allocation in C Programs.
+
+Memory-mapped I/O is another form of dynamic virtual memory allocation. Mapping memory to a file means declaring that the contents of certain range of a process’ addresses shall be identical to the contents of a specified regular file. The system makes the virtual memory initially contain the contents of the file, and if you modify the memory, the system writes the same modification to the file. Note that due to the magic of virtual memory and page faults, there is no reason for the system to do I/O to read the file, or allocate real memory for its contents, until the program accesses the virtual memory. See Memory-mapped I/O.
+
+Just as it programmatically allocates memory, the program can programmatically deallocate (free) it. You can’t free the memory that was allocated by exec. When the program exits or execs, you might say that all its memory gets freed, but since in both cases the address space ceases to exist, the point is really moot. See Program Termination.
+
+A process’ virtual address space is divided into segments. A segment is a contiguous range of virtual addresses. Three important segments are:
+
+The text segment contains a program’s instructions and literals and static constants. It is allocated by exec and stays the same size for the life of the virtual address space.
+The data segment is working storage for the program. It can be preallocated and preloaded by exec and the process can extend or shrink it by calling functions as described in See Resizing the Data Segment. Its lower end is fixed.
+The stack segment contains a program stack. It grows as the stack grows, but doesn’t shrink when the stack shrinks.
+Next: Resizing the Data Segment, Previous: Process Memory Concepts, Up: Virtual Memory Allocation And Paging   [Contents][Index]
+
+3.2 Allocating Storage For Program Data
+This section covers how ordinary programs manage storage for their data, including the famous malloc function and some fancier facilities special to the GNU C Library and GNU Compiler.
+
+Memory Allocation in C Programs
+The GNU Allocator
+Unconstrained Allocation
+Allocation Debugging
+Replacing malloc
+Obstacks
+Automatic Storage with Variable Size
+Next: The GNU Allocator, Up: Allocating Storage For Program Data   [Contents][Index]
+
+3.2.1 Memory Allocation in C Programs
+The C language supports two kinds of memory allocation through the variables in C programs:
+
+Static allocation is what happens when you declare a static or global variable. Each static or global variable defines one block of space, of a fixed size. The space is allocated once, when your program is started (part of the exec operation), and is never freed.
+Automatic allocation happens when you declare an automatic variable, such as a function argument or a local variable. The space for an automatic variable is allocated when the compound statement containing the declaration is entered, and is freed when that compound statement is exited.
+In GNU C, the size of the automatic storage can be an expression that varies. In other C implementations, it must be a constant.
+
+A third important kind of memory allocation, dynamic allocation, is not supported by C variables but is available via GNU C Library functions.
+
+Dynamic Memory Allocation
+3.2.1.1 Dynamic Memory Allocation
+Dynamic memory allocation is a technique in which programs determine as they are running where to store some information. You need dynamic allocation when the amount of memory you need, or how long you continue to need it, depends on factors that are not known before the program runs.
+
+For example, you may need a block to store a line read from an input file; since there is no limit to how long a line can be, you must allocate the memory dynamically and make it dynamically larger as you read more of the line.
+
+Or, you may need a block for each record or each definition in the input data; since you can’t know in advance how many there will be, you must allocate a new block for each record or definition as you read it.
+
+When you use dynamic allocation, the allocation of a block of memory is an action that the program requests explicitly. You call a function or macro when you want to allocate space, and specify the size with an argument. If you want to free the space, you do so by calling another function or macro. You can do these things whenever you want, as often as you want.
+
+Dynamic allocation is not supported by C variables; there is no storage class “dynamic”, and there can never be a C variable whose value is stored in dynamically allocated space. The only way to get dynamically allocated memory is via a system call (which is generally via a GNU C Library function call), and the only way to refer to dynamically allocated space is through a pointer. Because it is less convenient, and because the actual process of dynamic allocation requires more computation time, programmers generally use dynamic allocation only when neither static nor automatic allocation will serve.
+
+For example, if you want to allocate dynamically some space to hold a struct foobar, you cannot declare a variable of type struct foobar whose contents are the dynamically allocated space. But you can declare a variable of pointer type struct foobar * and assign it the address of the space. Then you can use the operators ‘*’ and ‘->’ on this pointer variable to refer to the contents of the space:
+
+{
+  struct foobar *ptr = malloc (sizeof *ptr);
+  ptr->name = x;
+  ptr->next = current_foobar;
+  current_foobar = ptr;
+}
+Next: Unconstrained Allocation, Previous: Memory Allocation in C Programs, Up: Allocating Storage For Program Data   [Contents][Index]
+
+3.2.2 The GNU Allocator
+The malloc implementation in the GNU C Library is derived from ptmalloc (pthreads malloc), which in turn is derived from dlmalloc (Doug Lea malloc). This malloc may allocate memory in two different ways depending on their size and certain parameters that may be controlled by users. The most common way is to allocate portions of memory (called chunks) from a large contiguous area of memory and manage these areas to optimize their use and reduce wastage in the form of unusable chunks. Traditionally the system heap was set up to be the one large memory area but the GNU C Library malloc implementation maintains multiple such areas to optimize their use in multi-threaded applications. Each such area is internally referred to as an arena.
+
+As opposed to other versions, the malloc in the GNU C Library does not round up chunk sizes to powers of two, neither for large nor for small sizes. Neighboring chunks can be coalesced on a free no matter what their size is. This makes the implementation suitable for all kinds of allocation patterns without generally incurring high memory waste through fragmentation. The presence of multiple arenas allows multiple threads to allocate memory simultaneously in separate arenas, thus improving performance.
+
+The other way of memory allocation is for very large blocks, i.e. much larger than a page. These requests are allocated with mmap (anonymous or via /dev/zero; see Memory-mapped I/O)). This has the great advantage that these chunks are returned to the system immediately when they are freed. Therefore, it cannot happen that a large chunk becomes “locked” in between smaller ones and even after calling free wastes memory. The size threshold for mmap to be used is dynamic and gets adjusted according to allocation patterns of the program. mallopt can be used to statically adjust the threshold using M_MMAP_THRESHOLD and the use of mmap can be disabled completely with M_MMAP_MAX; see Malloc Tunable Parameters.
+
+A more detailed technical description of the GNU Allocator is maintained in the GNU C Library wiki. See https://sourceware.org/glibc/wiki/MallocInternals.
+
+It is possible to use your own custom malloc instead of the built-in allocator provided by the GNU C Library. See Replacing malloc.
+
+Next: Allocation Debugging, Previous: The GNU Allocator, Up: Allocating Storage For Program Data   [Contents][Index]
+
+3.2.3 Unconstrained Allocation
+The most general dynamic allocation facility is malloc. It allows you to allocate blocks of memory of any size at any time, make them bigger or smaller at any time, and free the blocks individually at any time (or never).
+
+Basic Memory Allocation
+Examples of malloc
+Freeing Memory Allocated with malloc
+Changing the Size of a Block
+Allocating Cleared Space
+Allocating Aligned Memory Blocks
+Malloc Tunable Parameters
+Heap Consistency Checking
+Statistics for Memory Allocation with malloc
+Summary of malloc-Related Functions
+Next: Examples of malloc, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.1 Basic Memory Allocation
+To allocate a block of memory, call malloc. The prototype for this function is in stdlib.h.
+
+Function: void * malloc (size_t size)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock fd mem | See POSIX Safety Concepts.
+
+This function returns a pointer to a newly allocated block size bytes long, or a null pointer (setting errno) if the block could not be allocated.
+
+The contents of the block are undefined; you must initialize it yourself (or use calloc instead; see Allocating Cleared Space). Normally you would convert the value to a pointer to the kind of object that you want to store in the block. Here we show an example of doing so, and of initializing the space with zeros using the library function memset (see Copying Strings and Arrays):
+
+struct foo *ptr = malloc (sizeof *ptr);
+if (ptr == 0) abort ();
+memset (ptr, 0, sizeof (struct foo));
+You can store the result of malloc into any pointer variable without a cast, because ISO C automatically converts the type void * to another type of pointer when necessary. However, a cast is necessary if the type is needed but not specified by context.
+
+Remember that when allocating space for a string, the argument to malloc must be one plus the length of the string. This is because a string is terminated with a null character that doesn’t count in the “length” of the string but does need space. For example:
+
+char *ptr = malloc (length + 1);
+See Representation of Strings, for more information about this.
+
+Next: Freeing Memory Allocated with malloc, Previous: Basic Memory Allocation, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.2 Examples of malloc
+If no more space is available, malloc returns a null pointer. You should check the value of every call to malloc. It is useful to write a subroutine that calls malloc and reports an error if the value is a null pointer, returning only if the value is nonzero. This function is conventionally called xmalloc. Here it is:
+
+void *
+xmalloc (size_t size)
+{
+  void *value = malloc (size);
+  if (value == 0)
+    fatal ("virtual memory exhausted");
+  return value;
+}
+Here is a real example of using malloc (by way of xmalloc). The function savestring will copy a sequence of characters into a newly allocated null-terminated string:
+
+char *
+savestring (const char *ptr, size_t len)
+{
+  char *value = xmalloc (len + 1);
+  value[len] = '\0';
+  return memcpy (value, ptr, len);
+}
+The block that malloc gives you is guaranteed to be aligned so that it can hold any type of data. On GNU systems, the address is always a multiple of eight on 32-bit systems, and a multiple of 16 on 64-bit systems. Only rarely is any higher boundary (such as a page boundary) necessary; for those cases, use aligned_alloc or posix_memalign (see Allocating Aligned Memory Blocks).
+
+Note that the memory located after the end of the block is likely to be in use for something else; perhaps a block already allocated by another call to malloc. If you attempt to treat the block as longer than you asked for it to be, you are liable to destroy the data that malloc uses to keep track of its blocks, or you may destroy the contents of another block. If you have already allocated a block and discover you want it to be bigger, use realloc (see Changing the Size of a Block).
+
+Portability Notes:
+
+In the GNU C Library, a successful malloc (0) returns a non-null pointer to a newly allocated size-zero block; other implementations may return NULL instead. POSIX and the ISO C standard allow both behaviors.
+In the GNU C Library, a failed malloc call sets errno, but ISO C does not require this and non-POSIX implementations need not set errno when failing.
+In the GNU C Library, malloc always fails when size exceeds PTRDIFF_MAX, to avoid problems with programs that subtract pointers or use signed indexes. Other implementations may succeed in this case, leading to undefined behavior later.
+Next: Changing the Size of a Block, Previous: Examples of malloc, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.3 Freeing Memory Allocated with malloc
+When you no longer need a block that you got with malloc, use the function free to make the block available to be allocated again. The prototype for this function is in stdlib.h.
+
+Function: void free (void *ptr)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock fd mem | See POSIX Safety Concepts.
+
+The free function deallocates the block of memory pointed at by ptr.
+
+Freeing a block alters the contents of the block. Do not expect to find any data (such as a pointer to the next block in a chain of blocks) in the block after freeing it. Copy whatever you need out of the block before freeing it! Here is an example of the proper way to free all the blocks in a chain, and the strings that they point to:
+
+struct chain
+  {
+    struct chain *next;
+    char *name;
+  }
+
+void
+free_chain (struct chain *chain)
+{
+  while (chain != 0)
+    {
+      struct chain *next = chain->next;
+      free (chain->name);
+      free (chain);
+      chain = next;
+    }
+}
+Occasionally, free can actually return memory to the operating system and make the process smaller. Usually, all it can do is allow a later call to malloc to reuse the space. In the meantime, the space remains in your program as part of a free-list used internally by malloc.
+
+The free function preserves the value of errno, so that cleanup code need not worry about saving and restoring errno around a call to free. Although neither ISO C nor POSIX.1-2017 requires free to preserve errno, a future version of POSIX is planned to require it.
+
+There is no point in freeing blocks at the end of a program, because all of the program’s space is given back to the system when the process terminates.
+
+Next: Allocating Cleared Space, Previous: Freeing Memory Allocated with malloc, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.4 Changing the Size of a Block
+Often you do not know for certain how big a block you will ultimately need at the time you must begin to use the block. For example, the block might be a buffer that you use to hold a line being read from a file; no matter how long you make the buffer initially, you may encounter a line that is longer.
+
+You can make the block longer by calling realloc or reallocarray. These functions are declared in stdlib.h.
+
+Function: void * realloc (void *ptr, size_t newsize)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock fd mem | See POSIX Safety Concepts.
+
+The realloc function changes the size of the block whose address is ptr to be newsize.
+
+Since the space after the end of the block may be in use, realloc may find it necessary to copy the block to a new address where more free space is available. The value of realloc is the new address of the block. If the block needs to be moved, realloc copies the old contents.
+
+If you pass a null pointer for ptr, realloc behaves just like ‘malloc (newsize)’. Otherwise, if newsize is zero realloc frees the block and returns NULL. Otherwise, if realloc cannot reallocate the requested size it returns NULL and sets errno; the original block is left undisturbed.
+
+Function: void * reallocarray (void *ptr, size_t nmemb, size_t size)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock fd mem | See POSIX Safety Concepts.
+
+The reallocarray function changes the size of the block whose address is ptr to be long enough to contain a vector of nmemb elements, each of size size. It is equivalent to ‘realloc (ptr, nmemb * size)’, except that reallocarray fails safely if the multiplication overflows, by setting errno to ENOMEM, returning a null pointer, and leaving the original block unchanged.
+
+reallocarray should be used instead of realloc when the new size of the allocated block is the result of a multiplication that might overflow.
+
+Portability Note: This function is not part of any standard. It was first introduced in OpenBSD 5.6.
+
+Like malloc, realloc and reallocarray may return a null pointer if no memory space is available to make the block bigger. When this happens, the original block is untouched; it has not been modified or relocated.
+
+In most cases it makes no difference what happens to the original block when realloc fails, because the application program cannot continue when it is out of memory, and the only thing to do is to give a fatal error message. Often it is convenient to write and use subroutines, conventionally called xrealloc and xreallocarray, that take care of the error message as xmalloc does for malloc:
+
+void *
+xreallocarray (void *ptr, size_t nmemb, size_t size)
+{
+  void *value = reallocarray (ptr, nmemb, size);
+  if (value == 0)
+    fatal ("Virtual memory exhausted");
+  return value;
+}
+
+void *
+xrealloc (void *ptr, size_t size)
+{
+  return xreallocarray (ptr, 1, size);
+}
+You can also use realloc or reallocarray to make a block smaller. The reason you would do this is to avoid tying up a lot of memory space when only a little is needed. In several allocation implementations, making a block smaller sometimes necessitates copying it, so it can fail if no other space is available.
+
+Portability Notes:
+
+Portable programs should not attempt to reallocate blocks to be size zero. On other implementations if ptr is non-null, realloc (ptr, 0) might free the block and return a non-null pointer to a size-zero object, or it might fail and return NULL without freeing the block. The ISO C17 standard allows these variations.
+In the GNU C Library, reallocation fails if the resulting block would exceed PTRDIFF_MAX in size, to avoid problems with programs that subtract pointers or use signed indexes. Other implementations may succeed, leading to undefined behavior later.
+In the GNU C Library, if the new size is the same as the old, realloc and reallocarray are guaranteed to change nothing and return the same address that you gave. However, POSIX and ISO C allow the functions to relocate the object or fail in this situation.
+Next: Allocating Aligned Memory Blocks, Previous: Changing the Size of a Block, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.5 Allocating Cleared Space
+The function calloc allocates memory and clears it to zero. It is declared in stdlib.h.
+
+Function: void * calloc (size_t count, size_t eltsize)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock fd mem | See POSIX Safety Concepts.
+
+This function allocates a block long enough to contain a vector of count elements, each of size eltsize. Its contents are cleared to zero before calloc returns.
+
+You could define calloc as follows:
+
+void *
+calloc (size_t count, size_t eltsize)
+{
+  void *value = reallocarray (0, count, eltsize);
+  if (value != 0)
+    memset (value, 0, count * eltsize);
+  return value;
+}
+But in general, it is not guaranteed that calloc calls reallocarray and memset internally. For example, if the calloc implementation knows for other reasons that the new memory block is zero, it need not zero out the block again with memset. Also, if an application provides its own reallocarray outside the C library, calloc might not use that redefinition. See Replacing malloc.
+
+Next: Malloc Tunable Parameters, Previous: Allocating Cleared Space, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.6 Allocating Aligned Memory Blocks
+The address of a block returned by malloc or realloc in GNU systems is always a multiple of eight (or sixteen on 64-bit systems). If you need a block whose address is a multiple of a higher power of two than that, use aligned_alloc or posix_memalign. aligned_alloc and posix_memalign are declared in stdlib.h.
+
+Function: void * aligned_alloc (size_t alignment, size_t size)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock fd mem | See POSIX Safety Concepts.
+
+The aligned_alloc function allocates a block of size bytes whose address is a multiple of alignment. The alignment must be a power of two.
+
+The aligned_alloc function returns a null pointer on error and sets errno to one of the following values:
+
+ENOMEM
+There was insufficient memory available to satisfy the request.
+
+EINVAL
+alignment is not a power of two.
+
+This function was introduced in ISO C11 and hence may have better portability to modern non-POSIX systems than posix_memalign.
+
+Function: void * memalign (size_t boundary, size_t size)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock fd mem | See POSIX Safety Concepts.
+
+The memalign function allocates a block of size bytes whose address is a multiple of boundary. The boundary must be a power of two! The function memalign works by allocating a somewhat larger block, and then returning an address within the block that is on the specified boundary.
+
+The memalign function returns a null pointer on error and sets errno to one of the following values:
+
+ENOMEM
+There was insufficient memory available to satisfy the request.
+
+EINVAL
+boundary is not a power of two.
+
+The memalign function is obsolete and aligned_alloc or posix_memalign should be used instead.
+
+Function: int posix_memalign (void **memptr, size_t alignment, size_t size)
+Preliminary: | MT-Safe | AS-Unsafe lock | AC-Unsafe lock fd mem | See POSIX Safety Concepts.
+
+The posix_memalign function is similar to the memalign function in that it returns a buffer of size bytes aligned to a multiple of alignment. But it adds one requirement to the parameter alignment: the value must be a power of two multiple of sizeof (void *).
+
+If the function succeeds in allocation memory a pointer to the allocated memory is returned in *memptr and the return value is zero. Otherwise the function returns an error value indicating the problem. The possible error values returned are:
+
+ENOMEM
+There was insufficient memory available to satisfy the request.
+
+EINVAL
+alignment is not a power of two multiple of sizeof (void *).
+
+This function was introduced in POSIX 1003.1d. Although this function is superseded by aligned_alloc, it is more portable to older POSIX systems that do not support ISO C11.
+
+Function: void * valloc (size_t size)
+Preliminary: | MT-Unsafe init | AS-Unsafe init lock | AC-Unsafe init lock fd mem | See POSIX Safety Concepts.
+
+Using valloc is like using memalign and passing the page size as the value of the first argument. It is implemented like this:
+
+void *
+valloc (size_t size)
+{
+  return memalign (getpagesize (), size);
+}
+How to get information about the memory subsystem? for more information about the memory subsystem.
+
+The valloc function is obsolete and aligned_alloc or posix_memalign should be used instead.
+
+Next: Heap Consistency Checking, Previous: Allocating Aligned Memory Blocks, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.7 Malloc Tunable Parameters
+You can adjust some parameters for dynamic memory allocation with the mallopt function. This function is the general SVID/XPG interface, defined in malloc.h.
+
+Function: int mallopt (int param, int value)
+Preliminary: | MT-Unsafe init const:mallopt | AS-Unsafe init lock | AC-Unsafe init lock | See POSIX Safety Concepts.
+
+When calling mallopt, the param argument specifies the parameter to be set, and value the new value to be set. Possible choices for param, as defined in malloc.h, are:
+
+M_MMAP_MAX
+The maximum number of chunks to allocate with mmap. Setting this to zero disables all use of mmap.
+
+The default value of this parameter is 65536.
+
+This parameter can also be set for the process at startup by setting the environment variable MALLOC_MMAP_MAX_ to the desired value.
+
+M_MMAP_THRESHOLD
+All chunks larger than this value are allocated outside the normal heap, using the mmap system call. This way it is guaranteed that the memory for these chunks can be returned to the system on free. Note that requests smaller than this threshold might still be allocated via mmap.
+
+If this parameter is not set, the default value is set as 128 KiB and the threshold is adjusted dynamically to suit the allocation patterns of the program. If the parameter is set, the dynamic adjustment is disabled and the value is set statically to the input value.
+
+This parameter can also be set for the process at startup by setting the environment variable MALLOC_MMAP_THRESHOLD_ to the desired value.
+
+M_PERTURB
+If non-zero, memory blocks are filled with values depending on some low order bits of this parameter when they are allocated (except when allocated by calloc) and freed. This can be used to debug the use of uninitialized or freed heap memory. Note that this option does not guarantee that the freed block will have any specific values. It only guarantees that the content the block had before it was freed will be overwritten.
+
+The default value of this parameter is 0.
+
+This parameter can also be set for the process at startup by setting the environment variable MALLOC_PERTURB_ to the desired value.
+
+M_TOP_PAD
+This parameter determines the amount of extra memory to obtain from the system when an arena needs to be extended. It also specifies the number of bytes to retain when shrinking an arena. This provides the necessary hysteresis in heap size such that excessive amounts of system calls can be avoided.
+
+The default value of this parameter is 0.
+
+This parameter can also be set for the process at startup by setting the environment variable MALLOC_TOP_PAD_ to the desired value.
+
+M_TRIM_THRESHOLD
+This is the minimum size (in bytes) of the top-most, releasable chunk that will trigger a system call in order to return memory to the system.
+
+If this parameter is not set, the default value is set as 128 KiB and the threshold is adjusted dynamically to suit the allocation patterns of the program. If the parameter is set, the dynamic adjustment is disabled and the value is set statically to the provided input.
+
+This parameter can also be set for the process at startup by setting the environment variable MALLOC_TRIM_THRESHOLD_ to the desired value.
+
+M_ARENA_TEST
+This parameter specifies the number of arenas that can be created before the test on the limit to the number of arenas is conducted. The value is ignored if M_ARENA_MAX is set.
+
+The default value of this parameter is 2 on 32-bit systems and 8 on 64-bit systems.
+
+This parameter can also be set for the process at startup by setting the environment variable MALLOC_ARENA_TEST to the desired value.
+
+M_ARENA_MAX
+This parameter sets the number of arenas to use regardless of the number of cores in the system.
+
+The default value of this tunable is 0, meaning that the limit on the number of arenas is determined by the number of CPU cores online. For 32-bit systems the limit is twice the number of cores online and on 64-bit systems, it is eight times the number of cores online. Note that the default value is not derived from the default value of M_ARENA_TEST and is computed independently.
+
+This parameter can also be set for the process at startup by setting the environment variable MALLOC_ARENA_MAX to the desired value.
+
+Next: Statistics for Memory Allocation with malloc, Previous: Malloc Tunable Parameters, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.8 Heap Consistency Checking
+You can ask malloc to check the consistency of dynamic memory by using the mcheck function and preloading the malloc debug library libc_malloc_debug using the LD_PRELOAD environment variable. This function is a GNU extension, declared in mcheck.h.
+
+Function: int mcheck (void (*abortfn) (enum mcheck_status status))
+Preliminary: | MT-Unsafe race:mcheck const:malloc_hooks | AS-Unsafe corrupt | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+Calling mcheck tells malloc to perform occasional consistency checks. These will catch things such as writing past the end of a block that was allocated with malloc.
+
+The abortfn argument is the function to call when an inconsistency is found. If you supply a null pointer, then mcheck uses a default function which prints a message and calls abort (see Aborting a Program). The function you supply is called with one argument, which says what sort of inconsistency was detected; its type is described below.
+
+It is too late to begin allocation checking once you have allocated anything with malloc. So mcheck does nothing in that case. The function returns -1 if you call it too late, and 0 otherwise (when it is successful).
+
+The easiest way to arrange to call mcheck early enough is to use the option ‘-lmcheck’ when you link your program; then you don’t need to modify your program source at all. Alternatively you might use a debugger to insert a call to mcheck whenever the program is started, for example these gdb commands will automatically call mcheck whenever the program starts:
+
+(gdb) break main
+Breakpoint 1, main (argc=2, argv=0xbffff964) at whatever.c:10
+(gdb) command 1
+Type commands for when breakpoint 1 is hit, one per line.
+End with a line saying just "end".
+>call mcheck(0)
+>continue
+>end
+(gdb) …
+This will however only work if no initialization function of any object involved calls any of the malloc functions since mcheck must be called before the first such function.
+
+Function: enum mcheck_status mprobe (void *pointer)
+Preliminary: | MT-Unsafe race:mcheck const:malloc_hooks | AS-Unsafe corrupt | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+The mprobe function lets you explicitly check for inconsistencies in a particular allocated block. You must have already called mcheck at the beginning of the program, to do its occasional checks; calling mprobe requests an additional consistency check to be done at the time of the call.
+
+The argument pointer must be a pointer returned by malloc or realloc. mprobe returns a value that says what inconsistency, if any, was found. The values are described below.
+
+Data Type: enum mcheck_status
+This enumerated type describes what kind of inconsistency was detected in an allocated block, if any. Here are the possible values:
+
+MCHECK_DISABLED
+mcheck was not called before the first allocation. No consistency checking can be done.
+
+MCHECK_OK
+No inconsistency detected.
+
+MCHECK_HEAD
+The data immediately before the block was modified. This commonly happens when an array index or pointer is decremented too far.
+
+MCHECK_TAIL
+The data immediately after the block was modified. This commonly happens when an array index or pointer is incremented too far.
+
+MCHECK_FREE
+The block was already freed.
+
+Another possibility to check for and guard against bugs in the use of malloc, realloc and free is to set the environment variable MALLOC_CHECK_. When MALLOC_CHECK_ is set to a non-zero value less than 4, a special (less efficient) implementation is used which is designed to be tolerant against simple errors, such as double calls of free with the same argument, or overruns of a single byte (off-by-one bugs). Not all such errors can be protected against, however, and memory leaks can result. Like in the case of mcheck, one would need to preload the libc_malloc_debug library to enable MALLOC_CHECK_ functionality. Without this preloaded library, setting MALLOC_CHECK_ will have no effect.
+
+Any detected heap corruption results in immediate termination of the process.
+
+There is one problem with MALLOC_CHECK_: in SUID or SGID binaries it could possibly be exploited since diverging from the normal programs behavior it now writes something to the standard error descriptor. Therefore the use of MALLOC_CHECK_ is disabled by default for SUID and SGID binaries. It can be enabled again by the system administrator by adding a file /etc/suid-debug (the content is not important it could be empty).
+
+So, what’s the difference between using MALLOC_CHECK_ and linking with ‘-lmcheck’? MALLOC_CHECK_ is orthogonal with respect to ‘-lmcheck’. ‘-lmcheck’ has been added for backward compatibility. Both MALLOC_CHECK_ and ‘-lmcheck’ should uncover the same bugs - but using MALLOC_CHECK_ you don’t need to recompile your application.
+
+Next: Summary of malloc-Related Functions, Previous: Heap Consistency Checking, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.9 Statistics for Memory Allocation with malloc
+You can get information about dynamic memory allocation by calling the mallinfo2 function. This function and its associated data type are declared in malloc.h; they are an extension of the standard SVID/XPG version.
+
+Data Type: struct mallinfo2
+This structure type is used to return information about the dynamic memory allocator. It contains the following members:
+
+size_t arena
+This is the total size of memory allocated with sbrk by malloc, in bytes.
+
+size_t ordblks
+This is the number of chunks not in use. (The memory allocator size_ternally gets chunks of memory from the operating system, and then carves them up to satisfy individual malloc requests; see The GNU Allocator.)
+
+size_t smblks
+This field is unused.
+
+size_t hblks
+This is the total number of chunks allocated with mmap.
+
+size_t hblkhd
+This is the total size of memory allocated with mmap, in bytes.
+
+size_t usmblks
+This field is unused and always 0.
+
+size_t fsmblks
+This field is unused.
+
+size_t uordblks
+This is the total size of memory occupied by chunks handed out by malloc.
+
+size_t fordblks
+This is the total size of memory occupied by free (not in use) chunks.
+
+size_t keepcost
+This is the size of the top-most releasable chunk that normally borders the end of the heap (i.e., the high end of the virtual address space’s data segment).
+
+Function: struct mallinfo2 mallinfo2 (void)
+Preliminary: | MT-Unsafe init const:mallopt | AS-Unsafe init lock | AC-Unsafe init lock | See POSIX Safety Concepts.
+
+This function returns information about the current dynamic memory usage in a structure of type struct mallinfo2.
+
+Previous: Statistics for Memory Allocation with malloc, Up: Unconstrained Allocation   [Contents][Index]
+
+3.2.3.10 Summary of malloc-Related Functions
+Here is a summary of the functions that work with malloc:
+
+void *malloc (size_t size)
+Allocate a block of size bytes. See Basic Memory Allocation.
+
+void free (void *addr)
+Free a block previously allocated by malloc. See Freeing Memory Allocated with malloc.
+
+void *realloc (void *addr, size_t size)
+Make a block previously allocated by malloc larger or smaller, possibly by copying it to a new location. See Changing the Size of a Block.
+
+void *reallocarray (void *ptr, size_t nmemb, size_t size)
+Change the size of a block previously allocated by malloc to nmemb * size bytes as with realloc. See Changing the Size of a Block.
+
+void *calloc (size_t count, size_t eltsize)
+Allocate a block of count * eltsize bytes using malloc, and set its contents to zero. See Allocating Cleared Space.
+
+void *valloc (size_t size)
+Allocate a block of size bytes, starting on a page boundary. See Allocating Aligned Memory Blocks.
+
+void *aligned_alloc (size_t size, size_t alignment)
+Allocate a block of size bytes, starting on an address that is a multiple of alignment. See Allocating Aligned Memory Blocks.
+
+int posix_memalign (void **memptr, size_t alignment, size_t size)
+Allocate a block of size bytes, starting on an address that is a multiple of alignment. See Allocating Aligned Memory Blocks.
+
+void *memalign (size_t size, size_t boundary)
+Allocate a block of size bytes, starting on an address that is a multiple of boundary. See Allocating Aligned Memory Blocks.
+
+int mallopt (int param, int value)
+Adjust a tunable parameter. See Malloc Tunable Parameters.
+
+int mcheck (void (*abortfn) (void))
+Tell malloc to perform occasional consistency checks on dynamically allocated memory, and to call abortfn when an inconsistency is found. See Heap Consistency Checking.
+
+struct mallinfo2 mallinfo2 (void)
+Return information about the current dynamic memory usage. See Statistics for Memory Allocation with malloc.
+
+Next: Replacing malloc, Previous: Unconstrained Allocation, Up: Allocating Storage For Program Data   [Contents][Index]
+
+3.2.4 Allocation Debugging
+A complicated task when programming with languages which do not use garbage collected dynamic memory allocation is to find memory leaks. Long running programs must ensure that dynamically allocated objects are freed at the end of their lifetime. If this does not happen the system runs out of memory, sooner or later.
+
+The malloc implementation in the GNU C Library provides some simple means to detect such leaks and obtain some information to find the location. To do this the application must be started in a special mode which is enabled by an environment variable. There are no speed penalties for the program if the debugging mode is not enabled.
+
+How to install the tracing functionality
+Example program excerpts
+Some more or less clever ideas
+Interpreting the traces
+Next: Example program excerpts, Up: Allocation Debugging   [Contents][Index]
+
+3.2.4.1 How to install the tracing functionality
+Function: void mtrace (void)
+Preliminary: | MT-Unsafe env race:mtrace init | AS-Unsafe init heap corrupt lock | AC-Unsafe init corrupt lock fd mem | See POSIX Safety Concepts.
+
+The mtrace function provides a way to trace memory allocation events in the program that calls it. It is disabled by default in the library and can be enabled by preloading the debugging library libc_malloc_debug using the LD_PRELOAD environment variable.
+
+When the mtrace function is called it looks for an environment variable named MALLOC_TRACE. This variable is supposed to contain a valid file name. The user must have write access. If the file already exists it is truncated. If the environment variable is not set or it does not name a valid file which can be opened for writing nothing is done. The behavior of malloc etc. is not changed. For obvious reasons this also happens if the application is installed with the SUID or SGID bit set.
+
+If the named file is successfully opened, mtrace installs special handlers for the functions malloc, realloc, and free. From then on, all uses of these functions are traced and protocolled into the file. There is now of course a speed penalty for all calls to the traced functions so tracing should not be enabled during normal use.
+
+This function is a GNU extension and generally not available on other systems. The prototype can be found in mcheck.h.
+
+Function: void muntrace (void)
+Preliminary: | MT-Unsafe race:mtrace locale | AS-Unsafe corrupt heap | AC-Unsafe corrupt mem lock fd | See POSIX Safety Concepts.
+
+The muntrace function can be called after mtrace was used to enable tracing the malloc calls. If no (successful) call of mtrace was made muntrace does nothing.
+
+Otherwise it deinstalls the handlers for malloc, realloc, and free and then closes the protocol file. No calls are protocolled anymore and the program runs again at full speed.
+
+This function is a GNU extension and generally not available on other systems. The prototype can be found in mcheck.h.
+
+Next: Some more or less clever ideas, Previous: How to install the tracing functionality, Up: Allocation Debugging   [Contents][Index]
+
+3.2.4.2 Example program excerpts
+Even though the tracing functionality does not influence the runtime behavior of the program it is not a good idea to call mtrace in all programs. Just imagine that you debug a program using mtrace and all other programs used in the debugging session also trace their malloc calls. The output file would be the same for all programs and thus is unusable. Therefore one should call mtrace only if compiled for debugging. A program could therefore start like this:
+
+#include <mcheck.h>
+
+int
+main (int argc, char *argv[])
+{
+#ifdef DEBUGGING
+  mtrace ();
+#endif
+  …
+}
+This is all that is needed if you want to trace the calls during the whole runtime of the program. Alternatively you can stop the tracing at any time with a call to muntrace. It is even possible to restart the tracing again with a new call to mtrace. But this can cause unreliable results since there may be calls of the functions which are not called. Please note that not only the application uses the traced functions, also libraries (including the C library itself) use these functions.
+
+This last point is also why it is not a good idea to call muntrace before the program terminates. The libraries are informed about the termination of the program only after the program returns from main or calls exit and so cannot free the memory they use before this time.
+
+So the best thing one can do is to call mtrace as the very first function in the program and never call muntrace. So the program traces almost all uses of the malloc functions (except those calls which are executed by constructors of the program or used libraries).
+
+Next: Interpreting the traces, Previous: Example program excerpts, Up: Allocation Debugging   [Contents][Index]
+
+3.2.4.3 Some more or less clever ideas
+You know the situation. The program is prepared for debugging and in all debugging sessions it runs well. But once it is started without debugging the error shows up. A typical example is a memory leak that becomes visible only when we turn off the debugging. If you foresee such situations you can still win. Simply use something equivalent to the following little program:
+
+#include <mcheck.h>
+#include <signal.h>
+
+static void
+enable (int sig)
+{
+  mtrace ();
+  signal (SIGUSR1, enable);
+}
+
+static void
+disable (int sig)
+{
+  muntrace ();
+  signal (SIGUSR2, disable);
+}
+
+int
+main (int argc, char *argv[])
+{
+  …
+
+  signal (SIGUSR1, enable);
+  signal (SIGUSR2, disable);
+
+  …
+}
+I.e., the user can start the memory debugger any time s/he wants if the program was started with MALLOC_TRACE set in the environment. The output will of course not show the allocations which happened before the first signal but if there is a memory leak this will show up nevertheless.
+
+Previous: Some more or less clever ideas, Up: Allocation Debugging   [Contents][Index]
+
+3.2.4.4 Interpreting the traces
+If you take a look at the output it will look similar to this:
+
+= Start
+ [0x8048209] - 0x8064cc8
+ [0x8048209] - 0x8064ce0
+ [0x8048209] - 0x8064cf8
+ [0x80481eb] + 0x8064c48 0x14
+ [0x80481eb] + 0x8064c60 0x14
+ [0x80481eb] + 0x8064c78 0x14
+ [0x80481eb] + 0x8064c90 0x14
+= End
+What this all means is not really important since the trace file is not meant to be read by a human. Therefore no attention is given to readability. Instead there is a program which comes with the GNU C Library which interprets the traces and outputs a summary in an user-friendly way. The program is called mtrace (it is in fact a Perl script) and it takes one or two arguments. In any case the name of the file with the trace output must be specified. If an optional argument precedes the name of the trace file this must be the name of the program which generated the trace.
+
+drepper$ mtrace tst-mtrace log
+No memory leaks.
+In this case the program tst-mtrace was run and it produced a trace file log. The message printed by mtrace shows there are no problems with the code, all allocated memory was freed afterwards.
+
+If we call mtrace on the example trace given above we would get a different output:
+
+drepper$ mtrace errlog
+- 0x08064cc8 Free 2 was never alloc'd 0x8048209
+- 0x08064ce0 Free 3 was never alloc'd 0x8048209
+- 0x08064cf8 Free 4 was never alloc'd 0x8048209
+
+Memory not freed:
+-----------------
+   Address     Size     Caller
+0x08064c48     0x14  at 0x80481eb
+0x08064c60     0x14  at 0x80481eb
+0x08064c78     0x14  at 0x80481eb
+0x08064c90     0x14  at 0x80481eb
+We have called mtrace with only one argument and so the script has no chance to find out what is meant with the addresses given in the trace. We can do better:
+
+drepper$ mtrace tst errlog
+- 0x08064cc8 Free 2 was never alloc'd /home/drepper/tst.c:39
+- 0x08064ce0 Free 3 was never alloc'd /home/drepper/tst.c:39
+- 0x08064cf8 Free 4 was never alloc'd /home/drepper/tst.c:39
+
+Memory not freed:
+-----------------
+   Address     Size     Caller
+0x08064c48     0x14  at /home/drepper/tst.c:33
+0x08064c60     0x14  at /home/drepper/tst.c:33
+0x08064c78     0x14  at /home/drepper/tst.c:33
+0x08064c90     0x14  at /home/drepper/tst.c:33
+Suddenly the output makes much more sense and the user can see immediately where the function calls causing the trouble can be found.
+
+Interpreting this output is not complicated. There are at most two different situations being detected. First, free was called for pointers which were never returned by one of the allocation functions. This is usually a very bad problem and what this looks like is shown in the first three lines of the output. Situations like this are quite rare and if they appear they show up very drastically: the program normally crashes.
+
+The other situation which is much harder to detect are memory leaks. As you can see in the output the mtrace function collects all this information and so can say that the program calls an allocation function from line 33 in the source file /home/drepper/tst-mtrace.c four times without freeing this memory before the program terminates. Whether this is a real problem remains to be investigated.
+
+Next: Obstacks, Previous: Allocation Debugging, Up: Allocating Storage For Program Data   [Contents][Index]
+
+3.2.5 Replacing malloc
+The GNU C Library supports replacing the built-in malloc implementation with a different allocator with the same interface. For dynamically linked programs, this happens through ELF symbol interposition, either using shared object dependencies or LD_PRELOAD. For static linking, the malloc replacement library must be linked in before linking against libc.a (explicitly or implicitly).
+
+Note: Failure to provide a complete set of replacement functions (that is, all the functions used by the application, the GNU C Library, and other linked-in libraries) can lead to static linking failures, and, at run time, to heap corruption and application crashes. Replacement functions should implement the behavior documented for their counterparts in the GNU C Library; for example, the replacement free should also preserve errno.
+
+The minimum set of functions which has to be provided by a custom malloc is given in the table below.
+
+malloc
+free
+calloc
+realloc
+These malloc-related functions are required for the GNU C Library to work.1
+
+The malloc implementation in the GNU C Library provides additional functionality not used by the library itself, but which is often used by other system libraries and applications. A general-purpose replacement malloc implementation should provide definitions of these functions, too. Their names are listed in the following table.
+
+aligned_alloc
+malloc_usable_size
+memalign
+posix_memalign
+pvalloc
+valloc
+In addition, very old applications may use the obsolete cfree function.
+
+Further malloc-related functions such as mallopt or mallinfo2 will not have any effect or return incorrect statistics when a replacement malloc is in use. However, failure to replace these functions typically does not result in crashes or other incorrect application behavior, but may result in static linking failures.
+
+There are other functions (reallocarray, strdup, etc.) in the GNU C Library that are not listed above but return newly allocated memory to callers. Replacement of these functions is not supported and may produce incorrect results. The GNU C Library implementations of these functions call the replacement allocator functions whenever available, so they will work correctly with malloc replacement.
+
+Next: Automatic Storage with Variable Size, Previous: Replacing malloc, Up: Allocating Storage For Program Data   [Contents][Index]
+
+3.2.6 Obstacks
+An obstack is a pool of memory containing a stack of objects. You can create any number of separate obstacks, and then allocate objects in specified obstacks. Within each obstack, the last object allocated must always be the first one freed, but distinct obstacks are independent of each other.
+
+Aside from this one constraint of order of freeing, obstacks are totally general: an obstack can contain any number of objects of any size. They are implemented with macros, so allocation is usually very fast as long as the objects are usually small. And the only space overhead per object is the padding needed to start each object on a suitable boundary.
+
+Creating Obstacks
+Preparing for Using Obstacks
+Allocation in an Obstack
+Freeing Objects in an Obstack
+Obstack Functions and Macros
+Growing Objects
+Extra Fast Growing Objects
+Status of an Obstack
+Alignment of Data in Obstacks
+Obstack Chunks
+Summary of Obstack Functions
+Next: Preparing for Using Obstacks, Up: Obstacks   [Contents][Index]
+
+3.2.6.1 Creating Obstacks
+The utilities for manipulating obstacks are declared in the header file obstack.h.
+
+Data Type: struct obstack
+An obstack is represented by a data structure of type struct obstack. This structure has a small fixed size; it records the status of the obstack and how to find the space in which objects are allocated. It does not contain any of the objects themselves. You should not try to access the contents of the structure directly; use only the functions described in this chapter.
+
+You can declare variables of type struct obstack and use them as obstacks, or you can allocate obstacks dynamically like any other kind of object. Dynamic allocation of obstacks allows your program to have a variable number of different stacks. (You can even allocate an obstack structure in another obstack, but this is rarely useful.)
+
+All the functions that work with obstacks require you to specify which obstack to use. You do this with a pointer of type struct obstack *. In the following, we often say “an obstack” when strictly speaking the object at hand is such a pointer.
+
+The objects in the obstack are packed into large blocks called chunks. The struct obstack structure points to a chain of the chunks currently in use.
+
+The obstack library obtains a new chunk whenever you allocate an object that won’t fit in the previous chunk. Since the obstack library manages chunks automatically, you don’t need to pay much attention to them, but you do need to supply a function which the obstack library should use to get a chunk. Usually you supply a function which uses malloc directly or indirectly. You must also supply a function to free a chunk. These matters are described in the following section.
+
+Next: Allocation in an Obstack, Previous: Creating Obstacks, Up: Obstacks   [Contents][Index]
+
+3.2.6.2 Preparing for Using Obstacks
+Each source file in which you plan to use the obstack functions must include the header file obstack.h, like this:
+
+#include <obstack.h>
+Also, if the source file uses the macro obstack_init, it must declare or define two functions or macros that will be called by the obstack library. One, obstack_chunk_alloc, is used to allocate the chunks of memory into which objects are packed. The other, obstack_chunk_free, is used to return chunks when the objects in them are freed. These macros should appear before any use of obstacks in the source file.
+
+Usually these are defined to use malloc via the intermediary xmalloc (see Unconstrained Allocation). This is done with the following pair of macro definitions:
+
+#define obstack_chunk_alloc xmalloc
+#define obstack_chunk_free free
+Though the memory you get using obstacks really comes from malloc, using obstacks is faster because malloc is called less often, for larger blocks of memory. See Obstack Chunks, for full details.
+
+At run time, before the program can use a struct obstack object as an obstack, it must initialize the obstack by calling obstack_init.
+
+Function: int obstack_init (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Safe mem | See POSIX Safety Concepts.
+
+Initialize obstack obstack-ptr for allocation of objects. This function calls the obstack’s obstack_chunk_alloc function. If allocation of memory fails, the function pointed to by obstack_alloc_failed_handler is called. The obstack_init function always returns 1 (Compatibility notice: Former versions of obstack returned 0 if allocation failed).
+
+Here are two examples of how to allocate the space for an obstack and initialize it. First, an obstack that is a static variable:
+
+static struct obstack myobstack;
+…
+obstack_init (&myobstack);
+Second, an obstack that is itself dynamically allocated:
+
+struct obstack *myobstack_ptr
+  = (struct obstack *) xmalloc (sizeof (struct obstack));
+
+obstack_init (myobstack_ptr);
+Variable: obstack_alloc_failed_handler
+The value of this variable is a pointer to a function that obstack uses when obstack_chunk_alloc fails to allocate memory. The default action is to print a message and abort. You should supply a function that either calls exit (see Program Termination) or longjmp (see Non-Local Exits) and doesn’t return.
+
+void my_obstack_alloc_failed (void)
+…
+obstack_alloc_failed_handler = &my_obstack_alloc_failed;
+Next: Freeing Objects in an Obstack, Previous: Preparing for Using Obstacks, Up: Obstacks   [Contents][Index]
+
+3.2.6.3 Allocation in an Obstack
+The most direct way to allocate an object in an obstack is with obstack_alloc, which is invoked almost like malloc.
+
+Function: void * obstack_alloc (struct obstack *obstack-ptr, int size)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+This allocates an uninitialized block of size bytes in an obstack and returns its address. Here obstack-ptr specifies which obstack to allocate the block in; it is the address of the struct obstack object which represents the obstack. Each obstack function or macro requires you to specify an obstack-ptr as the first argument.
+
+This function calls the obstack’s obstack_chunk_alloc function if it needs to allocate a new chunk of memory; it calls obstack_alloc_failed_handler if allocation of memory by obstack_chunk_alloc failed.
+
+For example, here is a function that allocates a copy of a string str in a specific obstack, which is in the variable string_obstack:
+
+struct obstack string_obstack;
+
+char *
+copystring (char *string)
+{
+  size_t len = strlen (string) + 1;
+  char *s = (char *) obstack_alloc (&string_obstack, len);
+  memcpy (s, string, len);
+  return s;
+}
+To allocate a block with specified contents, use the function obstack_copy, declared like this:
+
+Function: void * obstack_copy (struct obstack *obstack-ptr, void *address, int size)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+This allocates a block and initializes it by copying size bytes of data starting at address. It calls obstack_alloc_failed_handler if allocation of memory by obstack_chunk_alloc failed.
+
+Function: void * obstack_copy0 (struct obstack *obstack-ptr, void *address, int size)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+Like obstack_copy, but appends an extra byte containing a null character. This extra byte is not counted in the argument size.
+
+The obstack_copy0 function is convenient for copying a sequence of characters into an obstack as a null-terminated string. Here is an example of its use:
+
+char *
+obstack_savestring (char *addr, int size)
+{
+  return obstack_copy0 (&myobstack, addr, size);
+}
+Contrast this with the previous example of savestring using malloc (see Basic Memory Allocation).
+
+Next: Obstack Functions and Macros, Previous: Allocation in an Obstack, Up: Obstacks   [Contents][Index]
+
+3.2.6.4 Freeing Objects in an Obstack
+To free an object allocated in an obstack, use the function obstack_free. Since the obstack is a stack of objects, freeing one object automatically frees all other objects allocated more recently in the same obstack.
+
+Function: void obstack_free (struct obstack *obstack-ptr, void *object)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+If object is a null pointer, everything allocated in the obstack is freed. Otherwise, object must be the address of an object allocated in the obstack. Then object is freed, along with everything allocated in obstack-ptr since object.
+
+Note that if object is a null pointer, the result is an uninitialized obstack. To free all memory in an obstack but leave it valid for further allocation, call obstack_free with the address of the first object allocated on the obstack:
+
+obstack_free (obstack_ptr, first_object_allocated_ptr);
+Recall that the objects in an obstack are grouped into chunks. When all the objects in a chunk become free, the obstack library automatically frees the chunk (see Preparing for Using Obstacks). Then other obstacks, or non-obstack allocation, can reuse the space of the chunk.
+
+Next: Growing Objects, Previous: Freeing Objects in an Obstack, Up: Obstacks   [Contents][Index]
+
+3.2.6.5 Obstack Functions and Macros
+The interfaces for using obstacks may be defined either as functions or as macros, depending on the compiler. The obstack facility works with all C compilers, including both ISO C and traditional C, but there are precautions you must take if you plan to use compilers other than GNU C.
+
+If you are using an old-fashioned non-ISO C compiler, all the obstack “functions” are actually defined only as macros. You can call these macros like functions, but you cannot use them in any other way (for example, you cannot take their address).
+
+Calling the macros requires a special precaution: namely, the first operand (the obstack pointer) may not contain any side effects, because it may be computed more than once. For example, if you write this:
+
+obstack_alloc (get_obstack (), 4);
+you will find that get_obstack may be called several times. If you use *obstack_list_ptr++ as the obstack pointer argument, you will get very strange results since the incrementation may occur several times.
+
+In ISO C, each function has both a macro definition and a function definition. The function definition is used if you take the address of the function without calling it. An ordinary call uses the macro definition by default, but you can request the function definition instead by writing the function name in parentheses, as shown here:
+
+char *x;
+void *(*funcp) ();
+/* Use the macro.  */
+x = (char *) obstack_alloc (obptr, size);
+/* Call the function.  */
+x = (char *) (obstack_alloc) (obptr, size);
+/* Take the address of the function.  */
+funcp = obstack_alloc;
+This is the same situation that exists in ISO C for the standard library functions. See Macro Definitions of Functions.
+
+Warning: When you do use the macros, you must observe the precaution of avoiding side effects in the first operand, even in ISO C.
+
+If you use the GNU C compiler, this precaution is not necessary, because various language extensions in GNU C permit defining the macros so as to compute each argument only once.
+
+Next: Extra Fast Growing Objects, Previous: Obstack Functions and Macros, Up: Obstacks   [Contents][Index]
+
+3.2.6.6 Growing Objects
+Because memory in obstack chunks is used sequentially, it is possible to build up an object step by step, adding one or more bytes at a time to the end of the object. With this technique, you do not need to know how much data you will put in the object until you come to the end of it. We call this the technique of growing objects. The special functions for adding data to the growing object are described in this section.
+
+You don’t need to do anything special when you start to grow an object. Using one of the functions to add data to the object automatically starts it. However, it is necessary to say explicitly when the object is finished. This is done with the function obstack_finish.
+
+The actual address of the object thus built up is not known until the object is finished. Until then, it always remains possible that you will add so much data that the object must be copied into a new chunk.
+
+While the obstack is in use for a growing object, you cannot use it for ordinary allocation of another object. If you try to do so, the space already added to the growing object will become part of the other object.
+
+Function: void obstack_blank (struct obstack *obstack-ptr, int size)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+The most basic function for adding to a growing object is obstack_blank, which adds space without initializing it.
+
+Function: void obstack_grow (struct obstack *obstack-ptr, void *data, int size)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+To add a block of initialized space, use obstack_grow, which is the growing-object analogue of obstack_copy. It adds size bytes of data to the growing object, copying the contents from data.
+
+Function: void obstack_grow0 (struct obstack *obstack-ptr, void *data, int size)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+This is the growing-object analogue of obstack_copy0. It adds size bytes copied from data, followed by an additional null character.
+
+Function: void obstack_1grow (struct obstack *obstack-ptr, char c)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+To add one character at a time, use the function obstack_1grow. It adds a single byte containing c to the growing object.
+
+Function: void obstack_ptr_grow (struct obstack *obstack-ptr, void *data)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+Adding the value of a pointer one can use the function obstack_ptr_grow. It adds sizeof (void *) bytes containing the value of data.
+
+Function: void obstack_int_grow (struct obstack *obstack-ptr, int data)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt mem | See POSIX Safety Concepts.
+
+A single value of type int can be added by using the obstack_int_grow function. It adds sizeof (int) bytes to the growing object and initializes them with the value of data.
+
+Function: void * obstack_finish (struct obstack *obstack-ptr)
+Preliminary: | MT-Safe race:obstack-ptr | AS-Safe | AC-Unsafe corrupt | See POSIX Safety Concepts.
+
+When you are finished growing the object, use the function obstack_finish to close it off and return its final address.
+
+Once you have finished the object, the obstack is available for ordinary allocation or for growing another object.
+
+This function can return a null pointer under the same conditions as obstack_alloc (see Allocation in an Obstack).
+
+When you build an object by growing it, you will probably need to know afterward how long it became. You need not keep track of this as you grow the object, because you can find out the length from the obstack just before finishing the object with the function obstack_object_size, declared as follows:
+
+omething which is harder to implement with setjmp and longjmp is to switch temporarily to a different execution path and then resume where execution was stopped.
+
+
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ucontext.h>
+#include <sys/time.h>
+
+/* Set by the signal handler. */
+static volatile int expired;
+
+/* The contexts. */
+static ucontext_t uc[3];
+
+/* We do only a certain number of switches. */
+static int switches;
+
+
+/* This is the function doing the work.  It is just a
+   skeleton, real code has to be filled in. */
+static void
+f (int n)
+{
+  int m = 0;
+  while (1)
+    {
+      /* This is where the work would be done. */
+      if (++m % 100 == 0)
+        {
+          putchar ('.');
+          fflush (stdout);
+        }
+
+      /* Regularly the expire variable must be checked. */
+      if (expired)
+        {
+          /* We do not want the program to run forever. */
+          if (++switches == 20)
+            return;
+
+          printf ("\nswitching from %d to %d\n", n, 3 - n);
+          expired = 0;
+          /* Switch to the other context, saving the current one. */
+          swapcontext (&uc[n], &uc[3 - n]);
+        }
+    }
+}
+
+/* This is the signal handler which simply set the variable. */
+void
+handler (int signal)
+{
+  expired = 1;
+}
+
+
+int
+main (void)
+{
+  struct sigaction sa;
+  struct itimerval it;
+  char st1[8192];
+  char st2[8192];
+
+  /* Initialize the data structures for the interval timer. */
+  sa.sa_flags = SA_RESTART;
+  sigfillset (&sa.sa_mask);
+  sa.sa_handler = handler;
+  it.it_interval.tv_sec = 0;
+  it.it_interval.tv_usec = 1;
+  it.it_value = it.it_interval;
+
+  /* Install the timer and get the context we can manipulate. */
+  if (sigaction (SIGPROF, &sa, NULL) < 0
+      || setitimer (ITIMER_PROF, &it, NULL) < 0
+      || getcontext (&uc[1]) == -1
+      || getcontext (&uc[2]) == -1)
+    abort ();
+
+  /* Create a context with a separate stack which causes the
+     function f to be call with the parameter 1.
+     Note that the uc_link points to the main context
+     which will cause the program to terminate once the function
+     return. */
+  uc[1].uc_link = &uc[0];
+  uc[1].uc_stack.ss_sp = st1;
+  uc[1].uc_stack.ss_size = sizeof st1;
+  makecontext (&uc[1], (void (*) (void)) f, 1, 1);
+
+  /* Similarly, but 2 is passed as the parameter to f. */
+  uc[2].uc_link = &uc[0];
+  uc[2].uc_stack.ss_sp = st2;
+  uc[2].uc_stack.ss_size = sizeof st2;
+  makecontext (&uc[2], (void (*) (void)) f, 1, 2);
+
+  /* Start running. */
+  swapcontext (&uc[0], &uc[1]);
+  putchar ('\n');
+
+  return 0;
+}
+This an example how the context functions can be used to implement co-routines or cooperative multi-threading. All that has to be done is to call every once in a while swapcontext to continue running a different context. It is not recommended to do the context switching from the signal handler directly since leaving the signal handler via setcontext if the signal was delivered during code that was not asynchronous signal safe could lead to problems. Setting a variable in the signal handler and checking it in the body of the functions which are executed is a safer approach. Since swapcontext is saving the current context it is possible to have multiple different scheduling points in the code. Execution will always resume where it was left.
+
+Next: The Basic Program/System Interface, Previous: Non-Local Exits, Up: Main Menu   [Contents][Index]
+
+24 Signal Handling
+A signal is a software interrupt delivered to a process. The operating system uses signals to report exceptional situations to an executing program. Some signals report errors such as references to invalid memory addresses; others report asynchronous events, such as disconnection of a phone line.
+
+The GNU C Library defines a variety of signal types, each for a particular kind of event. Some kinds of events make it inadvisable or impossible for the program to proceed as usual, and the corresponding signals normally abort the program. Other kinds of signals that report harmless events are ignored by default.
+
+If you anticipate an event that causes signals, you can define a handler function and tell the operating system to run it when that particular type of signal arrives.
+
+Finally, one process can send a signal to another process; this allows a parent process to abort a child, or two related processes to communicate and synchronize.
+
+Basic Concepts of Signals
+Standard Signals
+Specifying Signal Actions
+Defining Signal Handlers
+Primitives Interrupted by Signals
+Generating Signals
+Blocking Signals
+Waiting for a Signal
+Using a Separate Signal Stack
+BSD Signal Handling
+Next: Standard Signals, Up: Signal Handling   [Contents][Index]
+
+24.1 Basic Concepts of Signals
+This section explains basic concepts of how signals are generated, what happens after a signal is delivered, and how programs can handle signals.
+
+Some Kinds of Signals
+Concepts of Signal Generation
+How Signals Are Delivered
+Next: Concepts of Signal Generation, Up: Basic Concepts of Signals   [Contents][Index]
+
+24.1.1 Some Kinds of Signals
+A signal reports the occurrence of an exceptional event. These are some of the events that can cause (or generate, or raise) a signal:
+
+A program error such as dividing by zero or issuing an address outside the valid range.
+A user request to interrupt or terminate the program. Most environments are set up to let a user suspend the program by typing C-z, or terminate it with C-c. Whatever key sequence is used, the operating system sends the proper signal to interrupt the process.
+The termination of a child process.
+Expiration of a timer or alarm.
+A call to kill or raise by the same process.
+A call to kill from another process. Signals are a limited but useful form of interprocess communication.
+An attempt to perform an I/O operation that cannot be done. Examples are reading from a pipe that has no writer (see Pipes and FIFOs), and reading or writing to a terminal in certain situations (see Job Control).
+Each of these kinds of events (excepting explicit calls to kill and raise) generates its own particular kind of signal. The various kinds of signals are listed and described in detail in Standard Signals.
+
+Next: How Signals Are Delivered, Previous: Some Kinds of Signals, Up: Basic Concepts of Signals   [Contents][Index]
+
+24.1.2 Concepts of Signal Generation
+In general, the events that generate signals fall into three major categories: errors, external events, and explicit requests.
+
+An error means that a program has done something invalid and cannot continue execution. But not all kinds of errors generate signals—in fact, most do not. For example, opening a nonexistent file is an error, but it does not raise a signal; instead, open returns -1. In general, errors that are necessarily associated with certain library functions are reported by returning a value that indicates an error. The errors which raise signals are those which can happen anywhere in the program, not just in library calls. These include division by zero and invalid memory addresses.
+
+An external event generally has to do with I/O or other processes. These include the arrival of input, the expiration of a timer, and the termination of a child process.
+
+An explicit request means the use of a library function such as kill whose purpose is specifically to generate a signal.
+
+Signals may be generated synchronously or asynchronously. A synchronous signal pertains to a specific action in the program, and is delivered (unless blocked) during that action. Most errors generate signals synchronously, and so do explicit requests by a process to generate a signal for that same process. On some machines, certain kinds of hardware errors (usually floating-point exceptions) are not reported completely synchronously, but may arrive a few instructions later.
+
+Asynchronous signals are generated by events outside the control of the process that receives them. These signals arrive at unpredictable times during execution. External events generate signals asynchronously, and so do explicit requests that apply to some other process.
+
+A given type of signal is either typically synchronous or typically asynchronous. For example, signals for errors are typically synchronous because errors generate signals synchronously. But any type of signal can be generated synchronously or asynchronously with an explicit request.
+
+Previous: Concepts of Signal Generation, Up: Basic Concepts of Signals   [Contents][Index]
+
+24.1.3 How Signals Are Delivered
+When a signal is generated, it becomes pending. Normally it remains pending for just a short period of time and then is delivered to the process that was signaled. However, if that kind of signal is currently blocked, it may remain pending indefinitely—until signals of that kind are unblocked. Once unblocked, it will be delivered immediately. See Blocking Signals.
+
+When the signal is delivered, whether right away or after a long delay, the specified action for that signal is taken. For certain signals, such as SIGKILL and SIGSTOP, the action is fixed, but for most signals, the program has a choice: ignore the signal, specify a handler function, or accept the default action for that kind of signal. The program specifies its choice using functions such as signal or sigaction (see Specifying Signal Actions). We sometimes say that a handler catches the signal. While the handler is running, that particular signal is normally blocked.
+
+If the specified action for a kind of signal is to ignore it, then any such signal which is generated is discarded immediately. This happens even if the signal is also blocked at the time. A signal discarded in this way will never be delivered, not even if the program subsequently specifies a different action for that kind of signal and then unblocks it.
+
+If a signal arrives which the program has neither handled nor ignored, its default action takes place. Each kind of signal has its own default action, documented below (see Standard Signals). For most kinds of signals, the default action is to terminate the process. For certain kinds of signals that represent “harmless” events, the default action is to do nothing.
+
+When a signal terminates a process, its parent process can determine the cause of termination by examining the termination status code reported by the wait or waitpid functions. (This is discussed in more detail in Process Completion.) The information it can get includes the fact that termination was due to a signal and the kind of signal involved. If a program you run from a shell is terminated by a signal, the shell typically prints some kind of error message.
+
+The signals that normally represent program errors have a special property: when one of these signals terminates the process, it also writes a core dump file which records the state of the process at the time of termination. You can examine the core dump with a debugger to investigate what caused the error.
+
+If you raise a “program error” signal by explicit request, and this terminates the process, it makes a core dump file just as if the signal had been due directly to an error.
+
+Next: Specifying Signal Actions, Previous: Basic Concepts of Signals, Up: Signal Handling   [Contents][Index]
+
+24.2 Standard Signals
+This section lists the names for various standard kinds of signals and describes what kind of event they mean. Each signal name is a macro which stands for a positive integer—the signal number for that kind of signal. Your programs should never make assumptions about the numeric code for a particular kind of signal, but rather refer to them always by the names defined here. This is because the number for a given kind of signal can vary from system to system, but the meanings of the names are standardized and fairly uniform.
+
+The signal names are defined in the header file signal.h.
+
+Macro: int NSIG
+The value of this symbolic constant is the total number of signals defined. Since the signal numbers are allocated consecutively, NSIG is also one greater than the largest defined signal number.
+
+Program Error Signals
+Termination Signals
+Alarm Signals
+Asynchronous I/O Signals
+Job Control Signals
+Operation Error Signals
+Miscellaneous Signals
+Signal Messages
+Next: Termination Signals, Up: Standard Signals   [Contents][Index]
+
+24.2.1 Program Error Signals
+The following signals are generated when a serious program error is detected by the operating system or the computer itself. In general, all of these signals are indications that your program is seriously broken in some way, and there’s usually no way to continue the computation which encountered the error.
+
+Some programs handle program error signals in order to tidy up before terminating; for example, programs that turn off echoing of terminal input should handle program error signals in order to turn echoing back on. The handler should end by specifying the default action for the signal that happened and then reraising it; this will cause the program to terminate with that signal, as if it had not had a handler. (See Handlers That Terminate the Process.)
+
+Termination is the sensible ultimate outcome from a program error in most programs. However, programming systems such as Lisp that can load compiled user programs might need to keep executing even if a user program incurs an error. These programs have handlers which use longjmp to return control to the command level.
+
+The default action for all of these signals is to cause the process to terminate. If you block or ignore these signals or establish handlers for them that return normally, your program will probably break horribly when such signals happen, unless they are generated by raise or kill instead of a real error.
+
+When one of these program error signals terminates a process, it also writes a core dump file which records the state of the process at the time of termination. The core dump file is named core and is written in whichever directory is current in the process at the time. (On GNU/Hurd systems, you can specify the file name for core dumps with the environment variable COREFILE.) The purpose of core dump files is so that you can examine them with a debugger to investigate what caused the error.
+
+Macro: int SIGFPE
+The SIGFPE signal reports a fatal arithmetic error. Although the name is derived from “floating-point exception”, this signal actually covers all arithmetic errors, including division by zero and overflow. If a program stores integer data in a location which is then used in a floating-point operation, this often causes an “invalid operation” exception, because the processor cannot recognize the data as a floating-point number.
+
+Actual floating-point exceptions are a complicated subject because there are many types of exceptions with subtly different meanings, and the SIGFPE signal doesn’t distinguish between them. The IEEE Standard for Binary Floating-Point Arithmetic (ANSI/IEEE Std 754-1985 and ANSI/IEEE Std 854-1987) defines various floating-point exceptions and requires conforming computer systems to report their occurrences. However, this standard does not specify how the exceptions are reported, or what kinds of handling and control the operating system can offer to the programmer.
+
+BSD systems provide the SIGFPE handler with an extra argument that distinguishes various causes of the exception. In order to access this argument, you must define the handler to accept two arguments, which means you must cast it to a one-argument function type in order to establish the handler. The GNU C Library does provide this extra argument, but the value is meaningful only on operating systems that provide the information (BSD systems and GNU systems).
+
+FPE_INTOVF_TRAP
+Integer overflow (impossible in a C program unless you enable overflow trapping in a hardware-specific fashion).
+
+FPE_INTDIV_TRAP
+Integer division by zero.
+
+FPE_SUBRNG_TRAP
+Subscript-range (something that C programs never check for).
+
+FPE_FLTOVF_TRAP
+Floating overflow trap.
+
+FPE_FLTDIV_TRAP
+Floating/decimal division by zero.
+
+FPE_FLTUND_TRAP
+Floating underflow trap. (Trapping on floating underflow is not normally enabled.)
+
+FPE_DECOVF_TRAP
+Decimal overflow trap. (Only a few machines have decimal arithmetic and C never uses it.)
+
+Macro: int SIGILL
+The name of this signal is derived from “illegal instruction”; it usually means your program is trying to execute garbage or a privileged instruction. Since the C compiler generates only valid instructions, SIGILL typically indicates that the executable file is corrupted, or that you are trying to execute data. Some common ways of getting into the latter situation are by passing an invalid object where a pointer to a function was expected, or by writing past the end of an automatic array (or similar problems with pointers to automatic variables) and corrupting other data on the stack such as the return address of a stack frame.
+
+SIGILL can also be generated when the stack overflows, or when the system has trouble running the handler for a signal.
+
+Macro: int SIGSEGV
+This signal is generated when a program tries to read or write outside the memory that is allocated for it, or to write memory that can only be read. (Actually, the signals only occur when the program goes far enough outside to be detected by the system’s memory protection mechanism.) The name is an abbreviation for “segmentation violation”.
+
+Common ways of getting a SIGSEGV condition include dereferencing a null or uninitialized pointer, or when you use a pointer to step through an array, but fail to check for the end of the array. It varies among systems whether dereferencing a null pointer generates SIGSEGV or SIGBUS.
+
+Macro: int SIGBUS
+This signal is generated when an invalid pointer is dereferenced. Like SIGSEGV, this signal is typically the result of dereferencing an uninitialized pointer. The difference between the two is that SIGSEGV indicates an invalid access to valid memory, while SIGBUS indicates an access to an invalid address. In particular, SIGBUS signals often result from dereferencing a misaligned pointer, such as referring to a four-word integer at an address not divisible by four. (Each kind of computer has its own requirements for address alignment.)
+
+The name of this signal is an abbreviation for “bus error”.
+
+Macro: int SIGABRT
+This signal indicates an error detected by the program itself and reported by calling abort. See Aborting a Program.
+
+Macro: int SIGIOT
+Generated by the PDP-11 “iot” instruction. On most machines, this is just another name for SIGABRT.
+
+Macro: int SIGTRAP
+Generated by the machine’s breakpoint instruction, and possibly other trap instructions. This signal is used by debuggers. Your program will probably only see SIGTRAP if it is somehow executing bad instructions.
+
+Macro: int SIGEMT
+Emulator trap; this results from certain unimplemented instructions which might be emulated in software, or the operating system’s failure to properly emulate them.
+
+Macro: int SIGSYS
+Bad system call; that is to say, the instruction to trap to the operating system was executed, but the code number for the system call to perform was invalid.
+
+Next: Alarm Signals, Previous: Program Error Signals, Up: Standard Signals   [Contents][Index]
+
+24.2.2 Termination Signals
+These signals are all used to tell a process to terminate, in one way or another. They have different names because they’re used for slightly different purposes, and programs might want to handle them differently.
+
+The reason for handling these signals is usually so your program can tidy up as appropriate before actually terminating. For example, you might want to save state information, delete temporary files, or restore the previous terminal modes. Such a handler should end by specifying the default action for the signal that happened and then reraising it; this will cause the program to terminate with that signal, as if it had not had a handler. (See Handlers That Terminate the Process.)
+
+The (obvious) default action for all of these signals is to cause the process to terminate.
+
+Macro: int SIGTERM
+The SIGTERM signal is a generic signal used to cause program termination. Unlike SIGKILL, this signal can be blocked, handled, and ignored. It is the normal way to politely ask a program to terminate.
+
+The shell command kill generates SIGTERM by default.
+
+Macro: int SIGINT
+The SIGINT (“program interrupt”) signal is sent when the user types the INTR character (normally C-c). See Special Characters, for information about terminal driver support for C-c.
+
+Macro: int SIGQUIT
+The SIGQUIT signal is similar to SIGINT, except that it’s controlled by a different key—the QUIT character, usually C-\—and produces a core dump when it terminates the process, just like a program error signal. You can think of this as a program error condition “detected” by the user.
+
+See Program Error Signals, for information about core dumps. See Special Characters, for information about terminal driver support.
+
+Certain kinds of cleanups are best omitted in handling SIGQUIT. For example, if the program creates temporary files, it should handle the other termination requests by deleting the temporary files. But it is better for SIGQUIT not to delete them, so that the user can examine them in conjunction with the core dump.
+
+Macro: int SIGKILL
+The SIGKILL signal is used to cause immediate program termination. It cannot be handled or ignored, and is therefore always fatal. It is also not possible to block this signal.
+
+This signal is usually generated only by explicit request. Since it cannot be handled, you should generate it only as a last resort, after first trying a less drastic method such as C-c or SIGTERM. If a process does not respond to any other termination signals, sending it a SIGKILL signal will almost always cause it to go away.
+
+In fact, if SIGKILL fails to terminate a process, that by itself constitutes an operating system bug which you should report.
+
+The system will generate SIGKILL for a process itself under some unusual conditions where the program cannot possibly continue to run (even to run a signal handler).
+
+Macro: int SIGHUP
+The SIGHUP (“hang-up”) signal is used to report that the user’s terminal is disconnected, perhaps because a network or telephone connection was broken. For more information about this, see Control Modes.
+
+This signal is also used to report the termination of the controlling process on a terminal to jobs associated with that session; this termination effectively disconnects all processes in the session from the controlling terminal. For more information, see Termination Internals.
+
+Next: Asynchronous I/O Signals, Previous: Termination Signals, Up: Standard Signals   [Contents][Index]
+
+24.2.3 Alarm Signals
+These signals are used to indicate the expiration of timers. See Setting an Alarm, for information about functions that cause these signals to be sent.
+
+The default behavior for these signals is to cause program termination. This default is rarely useful, but no other default would be useful; most of the ways of using these signals would require handler functions in any case.
+
+Macro: int SIGALRM
+This signal typically indicates expiration of a timer that measures real or clock time. It is used by the alarm function, for example.
+
+Macro: int SIGVTALRM
+This signal typically indicates expiration of a timer that measures CPU time used by the current process. The name is an abbreviation for “virtual time alarm”.
+
+Macro: int SIGPROF
+This signal typically indicates expiration of a timer that measures both CPU time used by the current process, and CPU time expended on behalf of the process by the system. Such a timer is used to implement code profiling facilities, hence the name of this signal.
+
+Next: Job Control Signals, Previous: Alarm Signals, Up: Standard Signals   [Contents][Index]
+
+24.2.4 Asynchronous I/O Signals
+The signals listed in this section are used in conjunction with asynchronous I/O facilities. You have to take explicit action by calling fcntl to enable a particular file descriptor to generate these signals (see Interrupt-Driven Input). The default action for these signals is to ignore them.
+
+Macro: int SIGIO
+This signal is sent when a file descriptor is ready to perform input or output.
+
+On most operating systems, terminals and sockets are the only kinds of files that can generate SIGIO; other kinds, including ordinary files, never generate SIGIO even if you ask them to.
+
+On GNU systems SIGIO will always be generated properly if you successfully set asynchronous mode with fcntl.
+
+Macro: int SIGURG
+This signal is sent when “urgent” or out-of-band data arrives on a socket. See Out-of-Band Data.
+
+Macro: int SIGPOLL
+This is a System V signal name, more or less similar to SIGIO. It is defined only for compatibility.
+
+Next: Operation Error Signals, Previous: Asynchronous I/O Signals, Up: Standard Signals   [Contents][Index]
+
+24.2.5 Job Control Signals
+These signals are used to support job control. If your system doesn’t support job control, then these macros are defined but the signals themselves can’t be raised or handled.
+
+You should generally leave these signals alone unless you really understand how job control works. See Job Control.
+
+Macro: int SIGCHLD
+This signal is sent to a parent process whenever one of its child processes terminates or stops.
+
+The default action for this signal is to ignore it. If you establish a handler for this signal while there are child processes that have terminated but not reported their status via wait or waitpid (see Process Completion), whether your new handler applies to those processes or not depends on the particular operating system.
+
+Macro: int SIGCLD
+This is an obsolete name for SIGCHLD.
+
+Macro: int SIGCONT
+You can send a SIGCONT signal to a process to make it continue. This signal is special—it always makes the process continue if it is stopped, before the signal is delivered. The default behavior is to do nothing else. You cannot block this signal. You can set a handler, but SIGCONT always makes the process continue regardless.
+
+Most programs have no reason to handle SIGCONT; they simply resume execution without realizing they were ever stopped. You can use a handler for SIGCONT to make a program do something special when it is stopped and continued—for example, to reprint a prompt when it is suspended while waiting for input.
+
+Macro: int SIGSTOP
+The SIGSTOP signal stops the process. It cannot be handled, ignored, or blocked.
+
+Macro: int SIGTSTP
+The SIGTSTP signal is an interactive stop signal. Unlike SIGSTOP, this signal can be handled and ignored.
+
+Your program should handle this signal if you have a special need to leave files or system tables in a secure state when a process is stopped. For example, programs that turn off echoing should handle SIGTSTP so they can turn echoing back on before stopping.
+
+This signal is generated when the user types the SUSP character (normally C-z). For more information about terminal driver support, see Special Characters.
+
+Macro: int SIGTTIN
+A process cannot read from the user’s terminal while it is running as a background job. When any process in a background job tries to read from the terminal, all of the processes in the job are sent a SIGTTIN signal. The default action for this signal is to stop the process. For more information about how this interacts with the terminal driver, see Access to the Controlling Terminal.
+
+Macro: int SIGTTOU
+This is similar to SIGTTIN, but is generated when a process in a background job attempts to write to the terminal or set its modes. Again, the default action is to stop the process. SIGTTOU is only generated for an attempt to write to the terminal if the TOSTOP output mode is set; see Output Modes.
+
+While a process is stopped, no more signals can be delivered to it until it is continued, except SIGKILL signals and (obviously) SIGCONT signals. The signals are marked as pending, but not delivered until the process is continued. The SIGKILL signal always causes termination of the process and can’t be blocked, handled or ignored. You can ignore SIGCONT, but it always causes the process to be continued anyway if it is stopped. Sending a SIGCONT signal to a process causes any pending stop signals for that process to be discarded. Likewise, any pending SIGCONT signals for a process are discarded when it receives a stop signal.
+
+When a process in an orphaned process group (see Orphaned Process Groups) receives a SIGTSTP, SIGTTIN, or SIGTTOU signal and does not handle it, the process does not stop. Stopping the process would probably not be very useful, since there is no shell program that will notice it stop and allow the user to continue it. What happens instead depends on the operating system you are using. Some systems may do nothing; others may deliver another signal instead, such as SIGKILL or SIGHUP. On GNU/Hurd systems, the process dies with SIGKILL; this avoids the problem of many stopped, orphaned processes lying around the system.
+
+Next: Miscellaneous Signals, Previous: Job Control Signals, Up: Standard Signals   [Contents][Index]
+
+24.2.6 Operation Error Signals
+These signals are used to report various errors generated by an operation done by the program. They do not necessarily indicate a programming error in the program, but an error that prevents an operating system call from completing. The default action for all of them is to cause the process to terminate.
+
+Macro: int SIGPIPE
+Broken pipe. If you use pipes or FIFOs, you have to design your application so that one process opens the pipe for reading before another starts writing. If the reading process never starts, or terminates unexpectedly, writing to the pipe or FIFO raises a SIGPIPE signal. If SIGPIPE is blocked, handled or ignored, the offending call fails with EPIPE instead.
+
+Pipes and FIFO special files are discussed in more detail in Pipes and FIFOs.
+
+Another cause of SIGPIPE is when you try to output to a socket that isn’t connected. See Sending Data.
+
+Macro: int SIGLOST
+Resource lost. This signal is generated when you have an advisory lock on an NFS file, and the NFS server reboots and forgets about your lock.
+
+On GNU/Hurd systems, SIGLOST is generated when any server program dies unexpectedly. It is usually fine to ignore the signal; whatever call was made to the server that died just returns an error.
+
+Macro: int SIGXCPU
+CPU time limit exceeded. This signal is generated when the process exceeds its soft resource limit on CPU time. See Limiting Resource Usage.
+
+Macro: int SIGXFSZ
+File size limit exceeded. This signal is generated when the process attempts to extend a file so it exceeds the process’s soft resource limit on file size. See Limiting Resource Usage.
+
+Next: Signal Messages, Previous: Operation Error Signals, Up: Standard Signals   [Contents][Index]
+
+24.2.7 Miscellaneous Signals
+These signals are used for various other purposes. In general, they will not affect your program unless it explicitly uses them for something.
+
+Macro: int SIGUSR1
+Macro: int SIGUSR2
+The SIGUSR1 and SIGUSR2 signals are set aside for you to use any way you want. They’re useful for simple interprocess communication, if you write a signal handler for them in the program that receives the signal.
+
+There is an example showing the use of SIGUSR1 and SIGUSR2 in Signaling Another Process.
+
+The default action is to terminate the process.
+
+Macro: int SIGWINCH
+Window size change. This is generated on some systems (including GNU) when the terminal driver’s record of the number of rows and columns on the screen is changed. The default action is to ignore it.
+
+If a program does full-screen display, it should handle SIGWINCH. When the signal arrives, it should fetch the new screen size and reformat its display accordingly.
+
+Macro: int SIGINFO
+Information request. On 4.4 BSD and GNU/Hurd systems, this signal is sent to all the processes in the foreground process group of the controlling terminal when the user types the STATUS character in canonical mode; see Characters that Cause Signals.
+
+If the process is the leader of the process group, the default action is to print some status information about the system and what the process is doing. Otherwise the default is to do nothing.
+
+Previous: Miscellaneous Signals, Up: Standard Signals   [Contents][Index]
+
+24.2.8 Signal Messages
+We mentioned above that the shell prints a message describing the signal that terminated a child process. The clean way to print a message describing a signal is to use the functions strsignal and psignal. These functions use a signal number to specify which kind of signal to describe. The signal number may come from the termination status of a child process (see Process Completion) or it may come from a signal handler in the same process.
+
+Function: char * strsignal (int signum)
+Preliminary: | MT-Unsafe race:strsignal locale | AS-Unsafe init i18n corrupt heap | AC-Unsafe init corrupt mem | See POSIX Safety Concepts.
+
+This function returns a pointer to a statically-allocated string containing a message describing the signal signum. You should not modify the contents of this string; and, since it can be rewritten on subsequent calls, you should save a copy of it if you need to reference it later.
+
+This function is a GNU extension, declared in the header file string.h.
+
+Function: void psignal (int signum, const char *message)
+Preliminary: | MT-Safe locale | AS-Unsafe corrupt i18n heap | AC-Unsafe lock corrupt mem | See POSIX Safety Concepts.
+
+This function prints a message describing the signal signum to the standard error output stream stderr; see Standard Streams.
+
+If you call psignal with a message that is either a null pointer or an empty string, psignal just prints the message corresponding to signum, adding a trailing newline.
+
+If you supply a non-null message argument, then psignal prefixes its output with this string. It adds a colon and a space character to separate the message from the string corresponding to signum.
+
+This function is a BSD feature, declared in the header file signal.h.
+
+Function: const char * sigdescr_np (int signum)
+| MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the message describing the signal signum or NULL for invalid signal number (e.g "Hangup" for SIGHUP). Different than strsignal the returned description is not translated. The message points to a static storage whose lifetime is the whole lifetime of the program.
+
+This function is a GNU extension, declared in the header file string.h.
+
+Function: const char * sigabbrev_np (int signum)
+| MT-Safe | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+This function returns the abbreviation describing the signal signum or NULL for invalid signal number. The message points to a static storage whose lifetime is the whole lifetime of the program.
+
+This function is a GNU extension, declared in the header file string.h.
+
+Next: Defining Signal Handlers, Previous: Standard Signals, Up: Signal Handling   [Contents][Index]
+
+24.3 Specifying Signal Actions
+The simplest way to change the action for a signal is to use the signal function. You can specify a built-in action (such as to ignore the signal), or you can establish a handler.
+
+The GNU C Library also implements the more versatile sigaction facility. This section describes both facilities and gives suggestions on which to use when.
+
+Basic Signal Handling
+Advanced Signal Handling
+Interaction of signal and sigaction
+sigaction Function Example
+Flags for sigaction
+Initial Signal Actions
+Next: Advanced Signal Handling, Up: Specifying Signal Actions   [Contents][Index]
+
+24.3.1 Basic Signal Handling
+The signal function provides a simple interface for establishing an action for a particular signal. The function and associated macros are declared in the header file signal.h.
+
+Data Type: sighandler_t
+This is the type of signal handler functions. Signal handlers take one integer argument specifying the signal number, and have return type void. So, you should define handler functions like this:
+
+void handler (int signum) { … }
+The name sighandler_t for this data type is a GNU extension.
+
+Function: sighandler_t signal (int signum, sighandler_t action)
+Preliminary: | MT-Safe sigintr | AS-Safe | AC-Safe | See POSIX Safety Concepts.
+
+The signal function establishes action as the action for the signal signum.
+
+The first argument, signum, identifies the signal whose behavior you want to control, and should be a signal number. The proper way to specify a signal number is with one of the symbolic signal names (see Standard Signals)—don’t use an explicit number, because the numerical code for a given kind of signal may vary from operating system to operating system.
+
+The second argument, action, specifies the action to use for the signal signum. This can be one of the following:
+
+SIG_DFL
