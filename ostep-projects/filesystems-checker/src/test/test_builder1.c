@@ -1,4 +1,4 @@
-#include "type.h"
+#include "../type.h"
 #include <stdio.h>
 #include <assert.h>
 #include <sys/mman.h>
@@ -52,31 +52,31 @@ void write_inode(char *fs, int ino, struct dinode *inode)
     memcpy(&fs[B2B(IBLOCK(ino, sb), (ino % IPB) * sizeof(struct dinode))], inode, sizeof(struct dinode));
 }
 
-int main()
+void build_test1_img(char *fs, int fs_sz, short type, int ino, int index)
 {
-    int write_sz = 0;
-    struct dinode din = {0};
+    static char test_img_name[100];
+    sprintf(test_img_name, "test1_%d.img", index);
+    int test_img = open(test_img_name, O_RDWR | O_CREAT | O_TRUNC, 0644);
+    int write_sz = write(test_img, fs, fs_sz);
+    assert(write_sz == fs_sz && "write");
+    char *test_img_map = mmap(NULL, fs_sz, PROT_READ | PROT_WRITE, MAP_SHARED, test_img, 0);
+    close(test_img);
+    struct dinode din;
+    din.type = xshort(type);
+    write_inode(test_img_map, ino, &din);
+    munmap(test_img_map, fs_sz);
+}
+
+int main(void)
+{
     int fd = open("fs.img", O_RDWR);
     assert(fd != -1 && "open");
     int file_sz = fd2sz(fd);
-    char *fs = mmap(NULL, file_sz, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+    char *fs = mmap(NULL, file_sz, PROT_READ, MAP_PRIVATE, fd, 0);
     sb = init_superblock(fs);
-    assert(fs != MAP_FAILED && "mmap");
-    int test1_1_img = open("test1_1.img", O_RDWR | O_CREAT | O_TRUNC, 0644);
-    int test1_2_img = open("test1_2.img", O_RDWR | O_CREAT | O_TRUNC, 0644);
-    int test1_3_img = open("test1_3.img", O_RDWR | O_CREAT | O_TRUNC, 0644);
-    assert(test1_1_img != -1 && "open");
-    assert(test1_2_img != -1 && "open");
-    assert(test1_3_img != -1 && "open");
-    din.type = xshort(5);
-    write_inode(fs, 1, &din);
-    write_sz = write(test1_1_img, fs, file_sz);
-    assert(write_sz == file_sz && "write");
-    write_sz = write(test1_2_img, fs, file_sz);
-    write_inode(fs, 100, &din);
-    assert(write_sz == file_sz && "write");
-    write_inode(fs, 199, &din);
-    write_sz = write(test1_3_img, fs, file_sz);
-    assert(write_sz == file_sz && "write");
+    build_test1_img(fs, file_sz, 5, 1, 1);
+    build_test1_img(fs, file_sz, 8, 100, 2);
+    build_test1_img(fs, file_sz, 10, 199, 3);
+    munmap(fs, file_sz);
     return 0;
 }
