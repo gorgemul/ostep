@@ -5,8 +5,10 @@
 
 #define BSIZE            512
 #define NDIRECT          12
+#define NINDIRECT (BSIZE / sizeof(uint32_t))
 #define SUPERBLOCK_START 1
 #define NINODES          200
+#define ROOT_DIR_INO     1
 
 struct superblock {
   uint32_t size;         // Size of file system image (blocks)
