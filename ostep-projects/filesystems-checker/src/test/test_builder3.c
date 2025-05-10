@@ -8,8 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ROOT_DIR_INO 1
+#define ROOT_DIR_INO   1
+#define DUMMPY_BLOCKNO 100
 
+int major = 3;
 int minor = 1;
 char *fs;
 int fs_sz;
@@ -17,7 +19,7 @@ struct superblock *sb;
 
 void build_test3_root_dir_not_dir(short type)
 {
-    char *name = get_test_name(3, minor++);
+    char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
     din.type = type;
@@ -27,7 +29,7 @@ void build_test3_root_dir_not_dir(short type)
 
 void build_test3_root_dir_no_link(void)
 {
-    char *name = get_test_name(3, minor++);
+    char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
     din.type = T_DIR;
@@ -37,15 +39,48 @@ void build_test3_root_dir_no_link(void)
     munmap(map, fs_sz);
 }
 
-void build_test3_root_dir_no_size()
+void build_test3_root_dir_no_size(void)
 {
-    char *name = get_test_name(3, minor++);
+    char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
     din.type = T_DIR;
     din.nlink = 1;
     din.size = 0;
     write_inode(map, sb, ROOT_DIR_INO, &din);
+    munmap(map, fs_sz);
+}
+
+void build_test3_root_dir_inode_not_1(void)
+{
+    char *name = get_test_name(major, minor++);
+    char *map = copy_and_map(fs, fs_sz, name);
+    struct dinode din = {0};
+    din.addrs[0] = DUMMPY_BLOCKNO;
+    write_inode(map, sb, ROOT_DIR_INO, &din);
+    struct dirent entries[DPB];
+    entries[0].inum = 2;
+    strcpy(entries[0].name, ".");
+    entries[1].inum = 2;
+    strcpy(entries[1].name, "..");
+    write_block(map, DUMMPY_BLOCKNO, (char*)entries);
+    munmap(map, fs_sz);
+}
+
+void build_test3_root_dir_parent_not_itself(void)
+{
+    char *name = get_test_name(major, minor++);
+    char *map = copy_and_map(fs, fs_sz, name);
+    struct dinode din = {0};
+    din.addrs[0] = DUMMPY_BLOCKNO;
+    write_inode(map, sb, ROOT_DIR_INO, &din);
+    struct dirent entries[DPB];
+    memset(entries, 0, BSIZE);
+    entries[0].inum = 1;
+    strcpy(entries[0].name, ".");
+    entries[1].inum = 0;
+    strcpy(entries[1].name, "..");
+    write_block(map, DUMMPY_BLOCKNO, (char*)entries);
     munmap(map, fs_sz);
 }
 
@@ -62,6 +97,8 @@ int main(void)
     build_test3_root_dir_not_dir(T_DEV);
     build_test3_root_dir_no_link();
     build_test3_root_dir_no_size();
+    build_test3_root_dir_inode_not_1();
+    build_test3_root_dir_parent_not_itself();
     munmap(fs, fs_sz);
     free(sb);
     free(fi);

@@ -53,6 +53,8 @@ run_test test3_2.img "ERROR: root directory does not exist."
 run_test test3_3.img "ERROR: root directory does not exist."
 run_test test3_4.img "ERROR: root directory does not exist."
 run_test test3_5.img "ERROR: root directory does not exist."
+run_test test3_6.img "ERROR: root directory does not exist."
+# run_test test3_7.img "ERROR: root directory does not exist."
 rm test_builder3 test3_*.img
 echo "Success: test3"
 

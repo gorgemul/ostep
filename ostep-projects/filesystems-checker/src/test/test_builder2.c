@@ -11,6 +11,7 @@
 #define DUMMY_INODE_NUMBER 50
 #define DUMMY_BLOCK_NUMBER 624 // actually not that dummy, need to make sure that block 624 has no data to run test
 
+int major = 2;
 int minor = 1;
 char *fs;
 int fs_sz;
@@ -18,7 +19,7 @@ struct superblock *sb;
 
 void build_test2_direct_block_img(int offset, uint32_t blockno)
 {
-    char *name = get_test_name(2, minor++);
+    char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
     din.addrs[offset] = blockno;
@@ -29,7 +30,7 @@ void build_test2_direct_block_img(int offset, uint32_t blockno)
 // pointer_invalid is used to means that inode.addrs[NDIRECT] is invalid
 void build_test2_indirect_block_img(uint32_t blockno, int is_pointer_invalid)
 {
-    char *name = get_test_name(2, minor++);
+    char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
     if (is_pointer_invalid)

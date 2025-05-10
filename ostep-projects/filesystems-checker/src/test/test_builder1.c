@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+int major = 1;
 int minor = 1;
 char *fs;
 int fs_sz;
@@ -13,7 +14,7 @@ struct superblock *sb;
 
 void build_test1_wrong_inode_type(short type, int ino)
 {
-    char *name = get_test_name(1, minor++);
+    char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
     din.type = type;

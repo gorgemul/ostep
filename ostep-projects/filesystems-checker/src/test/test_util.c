@@ -54,8 +54,13 @@ char *copy_and_map(char *fs, int fs_sz, char *name)
     close(fd);
     return map;
 }
- 
+
 void write_inode(char *fs, struct superblock *sb, int ino, struct dinode *inode)
 {
     memcpy(&fs[B2B(IBLOCK(ino, sb), (ino % IPB) * sizeof(struct dinode))], inode, sizeof(struct dinode));
+}
+
+void write_block(char *fs, int blockno, char *block)
+{
+    memcpy(&fs[B2B(blockno, 0)], block, BSIZE);
 }

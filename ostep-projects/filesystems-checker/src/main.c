@@ -40,6 +40,14 @@ struct dinode *read_inode(char *fs, int ino)
     return inode;
 }
 
+char *read_block(char *fs, int blockno)
+{
+    static char block[BSIZE] = {0};
+    memset(block, 0, BSIZE);
+    memcpy(block, &fs[B2B(blockno, 0)], BSIZE);
+    return block;
+}
+
 int is_valid_datablock_region(uint32_t blockno)
 {
     if (blockno == 0) return 1;
@@ -62,7 +70,6 @@ void check_inode_direct_block(struct dinode *inode)
 
 void check_inode_indirect_block(char *fs, struct dinode *inode)
 {
-    if (inode->addrs[NDIRECT] == 0) return;
     if (!is_valid_datablock_region(inode->addrs[NDIRECT])) log_die("ERROR: bad indirect address in inode.");
     uint32_t buf[NINDIRECT];
     memcpy(buf, &fs[B2B(inode->addrs[NDIRECT], 0)], BSIZE);
@@ -86,15 +93,10 @@ void check_root_dir(char *fs)
     struct dinode *root_inode = read_inode(fs, ROOT_DIR_INO);
     if (root_inode->type != T_DIR) log_die("ERROR: root directory does not exist.");
     if (root_inode->nlink < 1 || root_inode->size < 1) log_die("ERROR: root directory does not exist.");
+    struct dirent *entries = (struct dirent*)read_block(fs, root_inode->addrs[0]);
+    if (entries[0].inum != 1 || entries[1].inum != 1) log_die("ERROR: root directory does not exist.");
+    if (strcmp(entries[0].name, ".") != 0 || strcmp(entries[1].name, "..") != 0) log_die("ERROR: root directory does not exist.");
 }
-
-#if 0
-1. Root directory exists, its inode number is 1, and the parent of the root
-directory is itself. If not, print `ERROR: root directory does not exist.`
- - root dir inode number is 1
- - root dir exist
- - root dir parent is itself
-#endif
 
 int main(int argc, char **argv)
 {
