@@ -152,7 +152,7 @@ void check_datablock_bitmap_set(char *fs)
     }
 }
 
-void check_bitmapset_not_used(char *fs)
+void check_bitmapset_not_used_in_datablock(char *fs)
 {
     struct HashSet *set = hash_set_init();
     for (size_t blockno = 0; blockno < BPB; blockno++)
@@ -176,6 +176,41 @@ void check_bitmapset_not_used(char *fs)
     hash_set_destroy(set);
 }
 
+void check_block_number_appear_only_once_in_direct_block(char *fs)
+{
+    struct HashSet *set = hash_set_init();
+    for (size_t ino = 0; ino < NINODES; ino++) {
+        struct dinode *inode = read_inode(fs, ino);
+        for (size_t i = 0; i < NDIRECT; i++) {
+            if (inode->addrs[i] == 0) continue;
+            if (hash_set_has(set, itoa(inode->addrs[i]))) log_die("ERROR: direct address used more than once.");
+            hash_set_add(set, itoa(inode->addrs[i]));
+        }
+        free(inode);
+    }
+    hash_set_destroy(set);
+}
+
+void check_block_number_appear_only_once_in_indirect_block(char *fs)
+{
+    struct HashSet *set = hash_set_init();
+    for (size_t ino = 0; ino < NINODES; ino++) {
+        struct dinode *inode = read_inode(fs, ino);
+        if (inode->addrs[NDIRECT] == 0) continue;
+        if (hash_set_has(set, itoa(inode->addrs[NDIRECT]))) log_die("ERROR: indirect address used more than once.");
+        hash_set_add(set, itoa(inode->addrs[NDIRECT]));
+        uint32_t buf[NINDIRECT];
+        memcpy(buf, &fs[B2B(inode->addrs[NDIRECT], 0)], BSIZE);
+        for (size_t i = 0; i < NINDIRECT; i++) {
+            if (buf[i] == 0) continue;
+            if (hash_set_has(set, itoa(buf[i]))) log_die("ERROR: indirect address used more than once.");
+            hash_set_add(set, itoa(buf[i]));
+        }
+        free(inode);
+    }
+    hash_set_destroy(set);
+}
+
 void fs_check(char *fs)
 {
     sb = init_superblock(fs);
@@ -183,7 +218,9 @@ void fs_check(char *fs)
     check_root_dir(fs);
     check_dir(fs);
     check_datablock_bitmap_set(fs);
-    check_bitmapset_not_used(fs);
+    check_bitmapset_not_used_in_datablock(fs);
+    check_block_number_appear_only_once_in_direct_block(fs);
+    check_block_number_appear_only_once_in_indirect_block(fs);
     free(sb);
 }
 

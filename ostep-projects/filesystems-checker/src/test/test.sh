@@ -80,6 +80,20 @@ run_test test6_1.img "ERROR: bitmap marks block in use but it is not in use."
 rm test_builder6 test6_*.img
 echo "Success: test6"
 
+gcc -Wall -Wextra -pedantic -o test_builder7 test_builder7.c test_util.c
+./test_builder7
+run_test test7_1.img "ERROR: direct address used more than once."
+run_test test7_2.img "ERROR: direct address used more than once."
+rm test_builder7 test7_*.img
+echo "Success: test7"
+
+gcc -Wall -Wextra -pedantic -o test_builder8 test_builder8.c test_util.c
+./test_builder8
+run_test test8_1.img "ERROR: indirect address used more than once."
+run_test test8_2.img "ERROR: indirect address used more than once."
+rm test_builder8 test8_*.img
+echo "Success: test8"
+
 rm fsck fs.img
 make -C ../../xv6-src clean > /dev/null 2>&1
 echo "All test pass!"
