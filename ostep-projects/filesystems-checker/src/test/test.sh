@@ -25,7 +25,7 @@ echo "building xv6 file system image from scratch..."
 make -C ../../xv6-src fs.img > /dev/null 2>&1 # ignore the output
 echo "xv6 file system build sucess"
 cp ../../xv6-src/fs.img .
-gcc -Wall -Wextra -pedantic -o fsck ../main.c 
+gcc -Wall -Wextra -pedantic -o fsck ../main.c ../hash_set.c
 
 echo "start running test..."
 gcc -Wall -Wextra -pedantic -o test_builder1 test_builder1.c test_util.c
@@ -54,9 +54,31 @@ run_test test3_3.img "ERROR: root directory does not exist."
 run_test test3_4.img "ERROR: root directory does not exist."
 run_test test3_5.img "ERROR: root directory does not exist."
 run_test test3_6.img "ERROR: root directory does not exist."
-# run_test test3_7.img "ERROR: root directory does not exist."
+run_test test3_7.img "ERROR: root directory does not exist."
 rm test_builder3 test3_*.img
 echo "Success: test3"
+
+gcc -Wall -Wextra -pedantic -o test_builder4 test_builder4.c test_util.c
+./test_builder4
+run_test test4_1.img "ERROR: directory not properly formatted."
+run_test test4_2.img "ERROR: directory not properly formatted."
+run_test test4_3.img "ERROR: directory not properly formatted."
+rm test_builder4 test4_*.img
+echo "Success: test4"
+
+gcc -Wall -Wextra -pedantic -o test_builder5 test_builder5.c test_util.c
+./test_builder5
+run_test test5_1.img "ERROR: address used by inode but marked free in bitmap."
+run_test test5_2.img "ERROR: address used by inode but marked free in bitmap."
+run_test test5_3.img "ERROR: address used by inode but marked free in bitmap."
+rm test_builder5 test5_*.img
+echo "Success: test5"
+
+gcc -Wall -Wextra -pedantic -o test_builder6 test_builder6.c test_util.c
+./test_builder6
+run_test test6_1.img "ERROR: bitmap marks block in use but it is not in use."
+rm test_builder6 test6_*.img
+echo "Success: test6"
 
 rm fsck fs.img
 make -C ../../xv6-src clean > /dev/null 2>&1

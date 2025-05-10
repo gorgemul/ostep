@@ -60,7 +60,31 @@ void write_inode(char *fs, struct superblock *sb, int ino, struct dinode *inode)
     memcpy(&fs[B2B(IBLOCK(ino, sb), (ino % IPB) * sizeof(struct dinode))], inode, sizeof(struct dinode));
 }
 
+static char *read_block(char *fs, int blockno)
+{
+    static char block[BSIZE] = {0};
+    memset(block, 0, BSIZE);
+    memcpy(block, &fs[B2B(blockno, 0)], BSIZE);
+    return block;
+}
+
 void write_block(char *fs, int blockno, char *block)
 {
     memcpy(&fs[B2B(blockno, 0)], block, BSIZE);
+}
+
+void bitmap_set(char *fs, struct superblock *sb, int blockno)
+{
+    char *bitmap_block = read_block(fs, BBLOCK(blockno, sb));
+    int m = 1 << (blockno % 8);
+    bitmap_block[blockno/8] |= m;
+    write_block(fs, BBLOCK(blockno, sb), bitmap_block);
+}
+
+void bitmap_clear(char *fs, struct superblock *sb, int blockno)
+{
+    char *bitmap_block = read_block(fs, BBLOCK(blockno, sb));
+    int m = 1 << (blockno % 8);
+    bitmap_block[blockno/8] &= ~m;
+    write_block(fs, BBLOCK(blockno, sb), bitmap_block);
 }

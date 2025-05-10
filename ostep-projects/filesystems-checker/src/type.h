@@ -42,5 +42,9 @@ enum FileType { T_FREE = 0, T_DIR = 1, T_FILE = 2, T_DEV = 3 };
 #define IPB (BSIZE / sizeof(struct dinode))
 #define IBLOCK(i, sb) ((i) / IPB + sb->inodestart)
 #define DPB (BSIZE / sizeof(struct dirent))
+// Bitmap bits per block
+#define BPB           (BSIZE*8)
+// Block of free map containing bit for block b
+#define BBLOCK(b, sb) (b/BPB + sb->bmapstart)
 
 #endif // _TYPE_H_

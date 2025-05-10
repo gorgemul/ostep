@@ -1,19 +1,19 @@
 #include "../type.h"
 #include "test_util.h"
 
-int major = 1;
+#define NOT_USED_BLOCKNO 800
+
+int major = 6;
 int minor = 1;
 char *fs;
 int fs_sz;
 struct superblock *sb;
 
-void build_test1_wrong_inode_type(short type, int ino)
+void build_test6_bitmapset_but_no_used(void)
 {
     char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
-    struct dinode din = {0};
-    din.type = type;
-    write_inode(map, sb, ino, &din);
+    bitmap_set(map, sb, NOT_USED_BLOCKNO);
     munmap(map, fs_sz);
 }
 
@@ -25,9 +25,7 @@ int main(void)
     assert(fs != MAP_FAILED && "mmap");
     close(fi->fd);
     sb = init_superblock(fs);
-    build_test1_wrong_inode_type(5, 1);
-    build_test1_wrong_inode_type(8, 100);
-    build_test1_wrong_inode_type(10, 199);
+    build_test6_bitmapset_but_no_used();
     munmap(fs, fs_sz);
     free(sb);
     free(fi);

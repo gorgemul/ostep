@@ -1,15 +1,5 @@
 #include "../type.h"
 #include "test_util.h"
-#include <stdio.h>
-#include <assert.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
-
-#define DUMMY_INODE_NUMBER 50
-#define DUMMY_BLOCK_NUMBER 624 // actually not that dummy, need to make sure that block 624 has no data to run test
 
 int major = 2;
 int minor = 1;
@@ -23,7 +13,7 @@ void build_test2_direct_block_img(int offset, uint32_t blockno)
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
     din.addrs[offset] = blockno;
-    write_inode(map, sb, DUMMY_INODE_NUMBER, &din);
+    write_inode(map, sb, DUMMY_INO, &din);
     munmap(map, fs_sz);
 }
 
@@ -36,10 +26,12 @@ void build_test2_indirect_block_img(uint32_t blockno, int is_pointer_invalid)
     if (is_pointer_invalid)
         din.addrs[NDIRECT] = blockno;
     else {
-        din.addrs[NDIRECT] = DUMMY_BLOCK_NUMBER;
-        memcpy(&map[B2B(DUMMY_BLOCK_NUMBER, 0)], &blockno, sizeof(uint32_t));
+        din.addrs[NDIRECT] = DUMMY_BNO;
+        char empty_block[BSIZE] = {0};
+        write_block(map, DUMMY_BNO, empty_block);
+        memcpy(&map[B2B(DUMMY_BNO, 0)], &blockno, sizeof(uint32_t));
     }
-    write_inode(map, sb, DUMMY_INODE_NUMBER, &din);
+    write_inode(map, sb, DUMMY_INO, &din);
     munmap(map, fs_sz);
 }
 

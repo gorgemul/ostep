@@ -1,15 +1,7 @@
 #include "../type.h"
 #include "test_util.h"
-#include <stdio.h>
-#include <assert.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define ROOT_DIR_INO   1
-#define DUMMPY_BLOCKNO 100
 
 int major = 3;
 int minor = 1;
@@ -56,14 +48,14 @@ void build_test3_root_dir_inode_not_1(void)
     char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
-    din.addrs[0] = DUMMPY_BLOCKNO;
+    din.addrs[0] = DUMMY_BNO;
     write_inode(map, sb, ROOT_DIR_INO, &din);
     struct dirent entries[DPB];
     entries[0].inum = 2;
     strcpy(entries[0].name, ".");
     entries[1].inum = 2;
     strcpy(entries[1].name, "..");
-    write_block(map, DUMMPY_BLOCKNO, (char*)entries);
+    write_block(map, DUMMY_BNO, (char*)entries);
     munmap(map, fs_sz);
 }
 
@@ -72,7 +64,7 @@ void build_test3_root_dir_parent_not_itself(void)
     char *name = get_test_name(major, minor++);
     char *map = copy_and_map(fs, fs_sz, name);
     struct dinode din = {0};
-    din.addrs[0] = DUMMPY_BLOCKNO;
+    din.addrs[0] = DUMMY_BNO;
     write_inode(map, sb, ROOT_DIR_INO, &din);
     struct dirent entries[DPB];
     memset(entries, 0, BSIZE);
@@ -80,7 +72,7 @@ void build_test3_root_dir_parent_not_itself(void)
     strcpy(entries[0].name, ".");
     entries[1].inum = 0;
     strcpy(entries[1].name, "..");
-    write_block(map, DUMMPY_BLOCKNO, (char*)entries);
+    write_block(map, DUMMY_BNO, (char*)entries);
     munmap(map, fs_sz);
 }
 

@@ -1,4 +1,5 @@
 #include "type.h"
+#include "hash_set.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -24,6 +25,13 @@ int fd2sz(int fd)
     return (int)s.st_size;
 }
 
+char *itoa(size_t i)
+{
+    static char a[64];
+    sprintf(a, "%zu", i);
+    return a;
+}
+
 struct superblock *init_superblock(char *fs)
 {
     struct superblock *sb = malloc(sizeof(struct superblock));
@@ -46,6 +54,13 @@ char *read_block(char *fs, int blockno)
     memset(block, 0, BSIZE);
     memcpy(block, &fs[B2B(blockno, 0)], BSIZE);
     return block;
+}
+
+int bitmap_test(char *fs, struct superblock *sb, int blockno)
+{
+    char *bitmap_block = read_block(fs, BBLOCK(blockno, sb));
+    int m = 1 << (blockno % 8);
+    return (bitmap_block[blockno/8] & m) != 0;
 }
 
 int is_valid_datablock_region(uint32_t blockno)
@@ -91,11 +106,85 @@ void check_inode(char *fs)
 void check_root_dir(char *fs)
 {
     struct dinode *root_inode = read_inode(fs, ROOT_DIR_INO);
-    if (root_inode->type != T_DIR) log_die("ERROR: root directory does not exist.");
-    if (root_inode->nlink < 1 || root_inode->size < 1) log_die("ERROR: root directory does not exist.");
+    if (root_inode->type != T_DIR)
+        log_die("ERROR: root directory does not exist.");
+    if (root_inode->nlink < 1 || root_inode->size < 1)
+        log_die("ERROR: root directory does not exist.");
     struct dirent *entries = (struct dirent*)read_block(fs, root_inode->addrs[0]);
-    if (entries[0].inum != 1 || entries[1].inum != 1) log_die("ERROR: root directory does not exist.");
-    if (strcmp(entries[0].name, ".") != 0 || strcmp(entries[1].name, "..") != 0) log_die("ERROR: root directory does not exist.");
+    if (entries[0].inum != 1 || entries[1].inum != 1)
+        log_die("ERROR: root directory does not exist.");
+    if (strcmp(entries[0].name, ".") != 0 || strcmp(entries[1].name, "..") != 0)
+        log_die("ERROR: root directory does not exist.");
+}
+
+void check_dir(char *fs)
+{
+    for (size_t i = 0; i < NINODES; i++) {
+        struct dinode *inode = read_inode(fs, i);
+        if (inode->type == T_DIR) {
+           struct dirent *entries = (struct dirent*)read_block(fs, inode->addrs[0]);
+           if (entries[0].inum != i || strcmp(entries[0].name, ".") != 0)
+               log_die("ERROR: directory not properly formatted.");
+           if (strcmp(entries[1].name, "..") != 0)
+               log_die("ERROR: directory not properly formatted.");
+        }
+        free(inode);
+    }
+}
+
+void check_datablock_bitmap_set(char *fs)
+{
+    for (size_t i = 0; i < NINODES; i++) {
+        struct dinode *inode = read_inode(fs, i);
+        for (size_t j = 0; j < NDIRECT; j++)
+            if (inode->addrs[i] != 0 && !bitmap_test(fs, sb, inode->addrs[i]))
+                log_die("ERROR: address used by inode but marked free in bitmap.");
+        if (inode->addrs[NDIRECT] != 0) {
+            if (!bitmap_test(fs, sb, inode->addrs[NDIRECT]))
+                log_die("ERROR: address used by inode but marked free in bitmap.");
+            uint32_t buf[NINDIRECT];
+            memcpy(buf, &fs[B2B(inode->addrs[NDIRECT], 0)], BSIZE);
+            for (size_t i = 0; i < NINDIRECT; i++)
+                if (buf[i] != 0 && !bitmap_test(fs, sb, buf[i]))
+                    log_die("ERROR: address used by inode but marked free in bitmap.");
+        }
+        free(inode);
+    }
+}
+
+void check_bitmapset_not_used(char *fs)
+{
+    struct HashSet *set = hash_set_init();
+    for (size_t blockno = 0; blockno < BPB; blockno++)
+        if (bitmap_test(fs, sb, blockno)) hash_set_add(set, itoa(blockno));
+    for (size_t ino = 0; ino < NINODES; ino++) {
+        struct dinode *inode = read_inode(fs, ino);
+        for (size_t i = 0; i < NDIRECT; i++)
+            if (inode->addrs[i] != 0) hash_set_remove(set, itoa(inode->addrs[i]));
+        if (inode->addrs[NDIRECT] != 0) {
+            hash_set_remove(set, itoa(inode->addrs[NDIRECT]));
+            uint32_t buf[NINDIRECT];
+            memcpy(buf, &fs[B2B(inode->addrs[NDIRECT], 0)], BSIZE);
+            for (size_t i = 0; i < NINDIRECT; i++)
+                if (buf[i] != 0) hash_set_remove(set, itoa(buf[i]));
+        }
+        free(inode);
+    }
+    // because meta data is not in data block
+    int nmeta = sb->size - sb->nblocks;
+    if (hash_set_size(set) != nmeta) log_die("ERROR: bitmap marks block in use but it is not in use.");
+    hash_set_destroy(set);
+}
+
+void fs_check(char *fs)
+{
+    sb = init_superblock(fs);
+    check_inode(fs);
+    check_root_dir(fs);
+    check_dir(fs);
+    check_datablock_bitmap_set(fs);
+    check_bitmapset_not_used(fs);
+    free(sb);
 }
 
 int main(int argc, char **argv)
@@ -107,10 +196,7 @@ int main(int argc, char **argv)
     char *fs = mmap(NULL, file_sz, PROT_READ, MAP_PRIVATE, fd, 0);
     assert(fs != MAP_FAILED && "mmap");
     close(fd);
-    sb = init_superblock(fs);
-    check_inode(fs);
-    check_root_dir(fs);
+    fs_check(fs);
     munmap(fs, file_sz);
-    free(sb);
     return 0;
 }
