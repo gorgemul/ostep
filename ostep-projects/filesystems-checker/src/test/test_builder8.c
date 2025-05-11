@@ -7,11 +7,6 @@ char *fs;
 int fs_sz;
 struct superblock *sb;
 
-#if 0 
-1. For in-use inodes, each indirect address in use is only used once. If not,
-  print `ERROR: indirect address used more than once.`
-#endif
-
 void build_test8_indirect_block_pointer_use_twice(void)
 {
     char *name = get_test_name(major, minor++);
@@ -20,7 +15,9 @@ void build_test8_indirect_block_pointer_use_twice(void)
     din.type = T_FILE;
     din.addrs[NDIRECT] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     write_inode(map, sb, DUMMY_INO+1, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO+1, "foo2");
     char empty_block[BSIZE] = {0};
     write_block(map, DUMMY_BNO, empty_block);
     munmap(map, fs_sz);
@@ -34,6 +31,7 @@ void build_test8_indirect_block_use_twice(void)
     din.type = T_FILE;
     din.addrs[NDIRECT] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     char empty_block[BSIZE] = {0};
     write_block(map, DUMMY_BNO, empty_block);
     int blockno = DUMMY_BNO+1;

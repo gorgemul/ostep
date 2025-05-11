@@ -1,5 +1,6 @@
 #include "type.h"
 #include "hash_set.h"
+#include "hash_map.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -183,7 +184,8 @@ void check_block_number_appear_only_once_in_direct_block(char *fs)
         struct dinode *inode = read_inode(fs, ino);
         for (size_t i = 0; i < NDIRECT; i++) {
             if (inode->addrs[i] == 0) continue;
-            if (hash_set_has(set, itoa(inode->addrs[i]))) log_die("ERROR: direct address used more than once.");
+            if (hash_set_has(set, itoa(inode->addrs[i])))
+                log_die("ERROR: direct address used more than once.");
             hash_set_add(set, itoa(inode->addrs[i]));
         }
         free(inode);
@@ -211,6 +213,165 @@ void check_block_number_appear_only_once_in_indirect_block(char *fs)
     hash_set_destroy(set);
 }
 
+void check_inode_mark_used_not_found_in_dir(char *fs)
+{
+    struct HashSet *set = hash_set_init();
+    for (size_t ino = 2; ino < NINODES; ino++) { // because root dir should not inside any direntry but . and .. in itself
+        struct dinode *inode = read_inode(fs, ino);
+        if (inode->type != T_FREE) hash_set_add(set, itoa(ino));
+        free(inode);
+    }
+    for (size_t ino = 0; ino < NINODES; ino++) {
+        struct dinode *inode = read_inode(fs, ino);
+        if (inode->type != T_DIR) continue;
+        for (size_t i = 0; i < NDIRECT; i++) {
+            if (inode->addrs[i] == 0) continue;
+            struct dirent *entries = (struct dirent*)read_block(fs, inode->addrs[i]);
+            for (size_t j = 0; j < DPB; j++) {
+                if (entries[j].inum == 0) continue;
+                if (strcmp(entries[j].name, ".") == 0 || strcmp(entries[j].name, "..") == 0) continue;
+                hash_set_remove(set, itoa(entries[j].inum));
+            }
+        }
+        if (inode->addrs[NDIRECT] != 0) {
+            uint32_t buf[NINDIRECT];
+            memcpy(buf, &fs[B2B(inode->addrs[NDIRECT], 0)], BSIZE);
+            for (size_t i = 0; i < NINDIRECT; i++) {
+                if (buf[i] == 0) continue;
+                struct dirent *entries = (struct dirent*)read_block(fs, buf[i]);
+                for (size_t j = 0; j < DPB; j++) {
+                    if (entries[j].inum == 0) continue;
+                    if (strcmp(entries[j].name, ".") == 0 || strcmp(entries[j].name, "..") == 0) continue;
+                    hash_set_remove(set, itoa(entries[j].inum));
+                }
+            }
+        }
+        free(inode);
+    }
+    if (hash_set_size(set) != 0) log_die("ERROR: inode marked use but not found in a directory.");
+    hash_set_destroy(set);
+}
+
+void check_inode_refer_in_dir_but_not_exist(char *fs)
+{
+    struct HashSet *set = hash_set_init();
+    for (size_t ino = 0; ino < NINODES; ino++) {
+        struct dinode *inode = read_inode(fs, ino);
+        if (inode->type != T_DIR) continue;
+        for (size_t i = 0; i < NDIRECT; i++) {
+            if (inode->addrs[i] == 0) continue;
+            struct dirent *entries = (struct dirent*)read_block(fs, inode->addrs[i]);
+            for (size_t j = 0; j < DPB; j++) {
+                if (entries[j].inum == 0) continue;
+                if (strcmp(entries[j].name, ".") == 0 || strcmp(entries[j].name, "..") == 0) continue;
+                hash_set_add(set, itoa(entries[j].inum));
+            }
+        }
+        if (inode->addrs[NDIRECT] != 0) {
+            uint32_t buf[NINDIRECT];
+            memcpy(buf, &fs[B2B(inode->addrs[NDIRECT], 0)], BSIZE);
+            for (size_t i = 0; i < NINDIRECT; i++) {
+                if (buf[i] == 0) continue;
+                struct dirent *entries = (struct dirent*)read_block(fs, buf[i]);
+                for (size_t j = 0; j < DPB; j++) {
+                    if (entries[j].inum == 0) continue;
+                    if (strcmp(entries[j].name, ".") == 0 || strcmp(entries[j].name, "..") == 0) continue;
+                    hash_set_add(set, itoa(entries[j].inum));
+                }
+            }
+        }
+        free(inode);
+    }
+    for (size_t ino = 2; ino < NINODES; ino++) { // because root dir should not inside any direntry but . and .. in itself
+        struct dinode *inode = read_inode(fs, ino);
+        if (inode->type != T_FREE) hash_set_remove(set, itoa(ino));
+        free(inode);
+    }
+    if (hash_set_size(set) != 0)
+        log_die("ERROR: inode referred to in directory but marked free.");
+    hash_set_destroy(set);
+}
+
+void check_file_link_match_ref_in_dir(char *fs)
+{
+    struct HashMap *map = hash_map_init();
+    for (size_t ino = 0; ino < NINODES; ino++) {
+        struct dinode *inode = read_inode(fs, ino);
+        if (inode->type != T_DIR) continue;
+        for (size_t i = 0; i < NDIRECT; i++) {
+            if (inode->addrs[i] == 0) continue;
+            struct dirent *entries = (struct dirent*)read_block(fs, inode->addrs[i]);
+            for (size_t j = 0; j < DPB; j++) {
+                if (entries[j].inum == 0) continue;
+                if (strcmp(entries[j].name, ".") == 0 || strcmp(entries[j].name, "..") == 0) continue;
+                hash_map_add(map, itoa(entries[j].inum));
+            }
+        }
+        if (inode->addrs[NDIRECT] != 0) {
+            uint32_t buf[NINDIRECT];
+            memcpy(buf, &fs[B2B(inode->addrs[NDIRECT], 0)], BSIZE);
+            for (size_t i = 0; i < NINDIRECT; i++) {
+                if (buf[i] == 0) continue;
+                struct dirent *entries = (struct dirent*)read_block(fs, buf[i]);
+                for (size_t j = 0; j < DPB; j++) {
+                    if (entries[j].inum == 0) continue;
+                    if (strcmp(entries[j].name, ".") == 0 || strcmp(entries[j].name, "..") == 0) continue;
+                    hash_map_add(map, itoa(entries[j].inum));
+                }
+            }
+        }
+        free(inode);
+    }
+    for (size_t ino = 0; ino < NINODES; ino++) {
+        struct dinode *inode = read_inode(fs, ino);
+        if (inode->type == T_FILE && inode->nlink != hash_map_get(map, itoa(ino)))
+            log_die("ERROR: bad reference count for file.");
+        free(inode);
+    }
+    hash_map_destroy(map);
+}
+
+void check_dir_appear_twice_in_dir(char *fs)
+{
+    struct HashSet *set = hash_set_init();
+    for (size_t ino = 0; ino < NINODES; ino++) {
+        struct dinode *inode = read_inode(fs, ino);
+        if (inode->type != T_DIR) continue;
+        for (size_t i = 0; i < NDIRECT; i++) {
+            if (inode->addrs[i] == 0) continue;
+            struct dirent *entries = (struct dirent*)read_block(fs, inode->addrs[i]);
+            for (size_t j = 0; j < DPB; j++) {
+                if (entries[j].inum == 0) continue;
+                if (strcmp(entries[j].name, ".") == 0 || strcmp(entries[j].name, "..") == 0) continue;
+                struct dinode *din = read_inode(fs, entries[j].inum);
+                if (din->type == T_DIR) {
+                    if (hash_set_has(set, itoa(entries[j].inum))) log_die("ERROR: directory appears more than once in file system.");
+                    hash_set_add(set, itoa(entries[j].inum));
+                }
+            }
+        }
+        if (inode->addrs[NDIRECT] != 0) {
+            uint32_t buf[NINDIRECT];
+            memcpy(buf, &fs[B2B(inode->addrs[NDIRECT], 0)], BSIZE);
+            for (size_t i = 0; i < NINDIRECT; i++) {
+                if (buf[i] == 0) continue;
+                struct dirent *entries = (struct dirent*)read_block(fs, buf[i]);
+                for (size_t j = 0; j < DPB; j++) {
+                    if (entries[j].inum == 0) continue;
+                    if (strcmp(entries[j].name, ".") == 0 || strcmp(entries[j].name, "..") == 0) continue;
+                    struct dinode *din = read_inode(fs, entries[j].inum);
+                    if (din->type == T_DIR) {
+                        if (hash_set_has(set, itoa(entries[j].inum))) log_die("ERROR: directory appears more than once in file system.");
+                        hash_set_add(set, itoa(entries[j].inum));
+                    }
+                }
+            }
+        }
+        free(inode);
+    }
+    hash_set_destroy(set);
+}
+
 void fs_check(char *fs)
 {
     sb = init_superblock(fs);
@@ -221,6 +382,10 @@ void fs_check(char *fs)
     check_bitmapset_not_used_in_datablock(fs);
     check_block_number_appear_only_once_in_direct_block(fs);
     check_block_number_appear_only_once_in_indirect_block(fs);
+    check_inode_mark_used_not_found_in_dir(fs);
+    check_inode_refer_in_dir_but_not_exist(fs);
+    check_file_link_match_ref_in_dir(fs);
+    check_dir_appear_twice_in_dir(fs);
     free(sb);
 }
 

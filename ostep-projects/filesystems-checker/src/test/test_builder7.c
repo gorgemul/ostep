@@ -16,6 +16,7 @@ void build_test7_direct_block_use_twice_in_same_inode(void)
     din.addrs[0] = DUMMY_BNO;
     din.addrs[1] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     munmap(map, fs_sz);
 }
 
@@ -27,7 +28,9 @@ void build_test7_direct_block_use_twice_in_different_inode(void)
     din.type = T_FILE;
     din.addrs[0] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     write_inode(map, sb, DUMMY_INO+1, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO+1, "foo2");
     munmap(map, fs_sz);
 }
 

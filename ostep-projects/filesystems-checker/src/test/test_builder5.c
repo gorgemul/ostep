@@ -15,6 +15,7 @@ void build_test5_inode_direct_address_not_set(void)
     din.type = T_FILE;
     din.addrs[0] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     bitmap_clear(map, sb, DUMMY_BNO);
     munmap(map, fs_sz);
 }
@@ -27,6 +28,7 @@ void build_test5_inode_indirect_address_pointer_not_set(void)
     din.type = T_FILE;
     din.addrs[NDIRECT] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     bitmap_clear(map, sb, DUMMY_BNO);
     char empty_block[BSIZE] = {0};
     write_block(map, DUMMY_BNO, empty_block);
@@ -41,6 +43,7 @@ void build_test5_inode_indirect_address_not_set(void)
     din.type = T_FILE;
     din.addrs[NDIRECT] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     char empty_block[BSIZE] = {0};
     write_block(map, DUMMY_BNO, empty_block);
     int blockno = DUMMY_BNO+1;

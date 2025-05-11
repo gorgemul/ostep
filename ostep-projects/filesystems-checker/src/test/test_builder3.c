@@ -1,8 +1,6 @@
 #include "../type.h"
 #include "test_util.h"
 
-#define ROOT_DIR_INO   1
-
 int major = 3;
 int minor = 1;
 char *fs;

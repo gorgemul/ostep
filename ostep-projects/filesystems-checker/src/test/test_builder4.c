@@ -15,6 +15,7 @@ void build_test4_dir_not_contain_dot_entry(void)
     din.type = T_DIR;
     din.addrs[0] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     struct dirent entries[DPB];
     entries[0].inum = DUMMY_INO-1; // don't care
     strcpy(entries[0].name, "..");
@@ -30,6 +31,7 @@ void build_test4_dir_not_contain_dot_dot_entry(void)
     din.type = T_DIR;
     din.addrs[0] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     struct dirent entries[DPB];
     entries[0].inum = DUMMY_INO;
     strcpy(entries[0].name, ".");
@@ -47,6 +49,7 @@ void build_test4_dir_dot_entry_not_point_to_itself(void)
     din.type = T_DIR;
     din.addrs[0] = DUMMY_BNO;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     struct dirent entries[DPB];
     entries[0].inum = DUMMY_INO+1;
     strcpy(entries[0].name, ".");

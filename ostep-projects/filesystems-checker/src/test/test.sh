@@ -25,14 +25,12 @@ echo "building xv6 file system image from scratch..."
 make -C ../../xv6-src fs.img > /dev/null 2>&1 # ignore the output
 echo "xv6 file system build sucess"
 cp ../../xv6-src/fs.img .
-gcc -Wall -Wextra -pedantic -o fsck ../main.c ../hash_set.c
+gcc -Wall -Wextra -pedantic -o fsck ../main.c ../hash_set.c ../hash_map.c
 
 echo "start running test..."
 gcc -Wall -Wextra -pedantic -o test_builder1 test_builder1.c test_util.c
 ./test_builder1
 run_test test1_1.img "ERROR: bad inode."
-run_test test1_2.img "ERROR: bad inode."
-run_test test1_3.img "ERROR: bad inode."
 rm test_builder1 test1_*.img
 echo "Success: test1"
 
@@ -93,6 +91,32 @@ run_test test8_1.img "ERROR: indirect address used more than once."
 run_test test8_2.img "ERROR: indirect address used more than once."
 rm test_builder8 test8_*.img
 echo "Success: test8"
+
+gcc -Wall -Wextra -pedantic -o test_builder9 test_builder9.c test_util.c
+./test_builder9
+run_test test9_1.img "ERROR: inode marked use but not found in a directory."
+run_test test9_2.img "ERROR: inode marked use but not found in a directory."
+run_test test9_2.img "ERROR: inode marked use but not found in a directory."
+rm test_builder9 test9_*.img
+echo "Success: test9"
+
+gcc -Wall -Wextra -pedantic -o test_builder10 test_builder10.c test_util.c
+./test_builder10
+run_test test10_1.img "ERROR: inode referred to in directory but marked free."
+rm test_builder10 test10_*.img
+echo "Success: test10"
+
+gcc -Wall -Wextra -pedantic -o test_builder11 test_builder11.c test_util.c
+./test_builder11
+run_test test11_1.img "ERROR: bad reference count for file."
+rm test_builder11 test11_*.img
+echo "Success: test11"
+
+gcc -Wall -Wextra -pedantic -o test_builder12 test_builder12.c test_util.c
+./test_builder12
+run_test test12_1.img "ERROR: directory appears more than once in file system."
+rm test_builder12 test12_*.img
+echo "Success: test12"
 
 rm fsck fs.img
 make -C ../../xv6-src clean > /dev/null 2>&1

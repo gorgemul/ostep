@@ -10,9 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-#define DUMMY_INO 50
-#define DUMMY_BNO 100
+#define ROOT_DIR_INO   1
+#define DUMMY_INO      50
+#define DUMMY_BNO      100
+#define NO_USED_BNO    800
 
 struct FsInfo { int fd; int sz; };
 
@@ -24,5 +25,6 @@ void write_inode(char *fs, struct superblock *sb, int ino, struct dinode *inode)
 void write_block(char *fs, int blockno, char *block);
 void bitmap_set(char *fs, struct superblock *sb, int blockno);
 void bitmap_clear(char *fs, struct superblock *sb, int blockno);
+void save_file_in_root_dir(char *fs, struct superblock *sb, uint16_t ino, char *name);
 
 #endif // _TEST_UTIL_H_

@@ -55,6 +55,14 @@ char *copy_and_map(char *fs, int fs_sz, char *name)
     return map;
 }
 
+struct dinode *read_inode(char *fs, struct superblock *sb, int ino)
+{
+    struct dinode *inode = malloc(sizeof(struct dinode));
+    assert(inode && "malloc");
+    memcpy(inode, &fs[B2B(IBLOCK(ino, sb), (ino % IPB) * sizeof(struct dinode))], sizeof(struct dinode));
+    return inode;
+}
+
 void write_inode(char *fs, struct superblock *sb, int ino, struct dinode *inode)
 {
     memcpy(&fs[B2B(IBLOCK(ino, sb), (ino % IPB) * sizeof(struct dinode))], inode, sizeof(struct dinode));
@@ -87,4 +95,20 @@ void bitmap_clear(char *fs, struct superblock *sb, int blockno)
     int m = 1 << (blockno % 8);
     bitmap_block[blockno/8] &= ~m;
     write_block(fs, BBLOCK(blockno, sb), bitmap_block);
+}
+
+void save_file_in_root_dir(char *fs, struct superblock *sb, uint16_t ino, char *name)
+{
+    struct dinode *root_inode = read_inode(fs, sb, ROOT_DIR_INO);
+    int block_no = root_inode->addrs[0];
+    assert(block_no != 0 && "save_file_in_root_dir");
+    struct dirent *entries = (struct dirent *)read_block(fs, block_no);
+    for (size_t i = 0; i < DPB; i++) {
+        if (entries[i].inum == 0) {
+            entries[i].inum = ino;
+            strcpy(entries[i].name, name);
+            break;
+        }
+    }
+    write_block(fs, block_no, (char*)entries);
 }

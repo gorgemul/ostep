@@ -1,6 +1,8 @@
 #include "../type.h"
 #include "test_util.h"
 
+int first1 = 1;
+int first2 = 1;
 int major = 2;
 int minor = 1;
 char *fs;
@@ -14,6 +16,7 @@ void build_test2_direct_block_img(int offset, uint32_t blockno)
     struct dinode din = {0};
     din.addrs[offset] = blockno;
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     munmap(map, fs_sz);
 }
 
@@ -32,6 +35,7 @@ void build_test2_indirect_block_img(uint32_t blockno, int is_pointer_invalid)
         memcpy(&map[B2B(DUMMY_BNO, 0)], &blockno, sizeof(uint32_t));
     }
     write_inode(map, sb, DUMMY_INO, &din);
+    save_file_in_root_dir(map, sb, DUMMY_INO, "foo1");
     munmap(map, fs_sz);
 }
 
